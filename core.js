@@ -76,27 +76,31 @@ module.exports = {
 		console.log('done');
 	},
 
-	async trainModel(series, optimizer, activation, loss) {
-		console.log('train model ...', optimizer, activation, loss);
+	async trainModel(series, config) {
+		const { optimizer, activation, loss, epochs, lr } = config;
+		console.log(JSON.stringify(config, null, 4));
+
 
 		let xs = [];
 		let ys = [];
 		for (let i = 200; i < (series.length); i++) {
 			const serie = series[i];
-
 			xs.push([
-				Math.max(serie.rsma10, 0),
-				Math.max(serie.rsma50, 0),
-				Math.max(serie.rsma200, 0),
+				// serie.future.progress > 0 ? 1 : 0,
+				// serie.future.progress < 0 ? 1 : 0
+				serie.sma10,
+				serie.sma50,
+				serie.sma200,
+				// Math.max(serie.rsma10, 0),
+				// Math.max(serie.rsma50, 0),
+				// Math.max(serie.rsma200, 0),
 				// Math.max(serie.rsma10 * -1, 0),
 				// Math.max(serie.rsma50 * -1, 0),
 				// Math.max(serie.rsma200 * -1, 0),
 			]);
 			ys.push([
-				Math.random(),
-				Math.random(),
-				// serie.future.progress,
-				// serie.future.progress
+				serie.future.progress > 0 ? 1 : 0,
+				serie.future.progress < 0 ? 1 : 0
 				// Math.max(serie.future.progress, 0),
 				// Math.max(serie.future.progress * -1, 0)
 			]);
@@ -105,7 +109,8 @@ module.exports = {
 		const model = tf.sequential();
 		// you will need to provide the size of the individual inputs below 
 		// 'elu'|'hardSigmoid'|'linear'|'relu'|'relu6'| 'selu'|'sigmoid'|'softmax'|'softplus'|'softsign'|'tanh'
-		model.add(tf.layers.dense({ units: ys[0].length, activation, inputShape: xs[0].length }));
+		model.add(tf.layers.dense({ units: ys[0].length*2, activation, inputShape: xs[0].length }));
+		model.add(tf.layers.dense({ units: ys[0].length*4 }));
 		model.add(tf.layers.dense({ units: 2, activation }));
 		model.compile({
 			//optimizer: tf.train.adam(0.001),
@@ -113,28 +118,34 @@ module.exports = {
 			//optimizer: 'sgd',
 			optimizer,
 			loss,
-			lr: 0.001
+			lr
 		});
 
 		xs = tf.tensor2d(xs);
 		ys = tf.tensor2d(ys);
 		//xs.print();
 		//ys.print();
+		const start = new Date();
+		let lastLoss = 10000;
 		await model.fit(xs, ys, {
-			epochs: 10,
+			epochs,
+			verbose: 0,
 			callbacks: {
 				onEpochEnd: async (epoch, logs) => {
 
-					if (epoch % 10 === 0) {
-						console.log('#' + epoch, logs.loss);
+					if (epoch % (epochs / 5) === 0) {
+						if (lastLoss > logs.loss) {
+							console.log('#' + epoch, logs.loss, 'after', (new Date() - start) / 1000, 'sec.', Math.round((lastLoss - logs.loss) / lastLoss * 1000000) / 1000000);
+							lastLoss = logs.loss;
+						}
 					}
-					if (epoch == 300) {
-						model.optimizer.setLearningRate(0.14)
-					}
+					// if (epoch == 300) {
+					// 	model.optimizer.setLearningRate(0.14)
+					// }
 
-					if (epoch == 400) {
-						model.optimizer.setLearningRate(0.02)
-					}
+					// if (epoch == 400) {
+					// 	model.optimizer.setLearningRate(0.02)
+					// }
 				}
 			}
 		});

@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "name": "Launch Program",
             "skipFiles": [
@@ -15,6 +15,7 @@
                 "--harmony",
                 "--no-deprecation"
             ],
+            "console": "integratedTerminal",
             "program": "${workspaceFolder}/index.js",
             "sourceMaps": true,
             "smartStep": true    
