@@ -55,7 +55,7 @@ module.exports = {
 			const serie = series[i];
 
 			// future progress
-			serie.fprogress = (sma10[i] - serie.close) / serie.close;
+			serie.fprogress = (sma10[i] - serie.close) / serie.close * 100;
 
 			serie.sma10 = sma10[i - (series.length - sma10.length)];
 			serie.rsma10 = (serie.sma10 - serie.close) / serie.close || 0; // relative
@@ -66,114 +66,66 @@ module.exports = {
 			serie.sma200 = sma200[i - (series.length - sma200.length)];
 			serie.rsma200 = (serie.sma200 - serie.close) / serie.close || 0; // relative
 		}
-		return series;
+		return;
 		console.log('done');
 	},
 
-	prepareTraining(series) {
+	prepareTraining(series, config) {
+		series = series.filter(s => !isNaN(s.fprogress) && isFinite(s.fprogress));
+		
 		for (let i = 250; i < (series.length - 50); i++) {
 			const serie = series[i];
-			if (!isFinite(serie.rsma10)) {
-				//console.log('INFINITE', JSON.stringify(serie, null, 4));
-				continue;
-			}
 
 			serie.xs = [
-				//...series.slice(i - 3, i).map(s => s.rsma10),
-				//...series.slice(i - 3, i).map(s => s.rsma50),
-				//...series.slice(i - 3, i).map(s => s.rsma200),
-				series[i - 50].sma200,
-				series[i - 40].sma200,
-				series[i - 30].sma200,
-				series[i - 20].sma200,
-				series[i - 10].sma200,
-				series[i].sma200,
-				series[i - 50].sma50,
-				series[i - 40].sma50,
-				series[i - 30].sma50,
-				series[i - 20].sma50,
-				series[i - 10].sma50,
-				series[i].sma50,
-				series[i - 50].sma10,
-				series[i - 40].sma10,
-				series[i - 30].sma10,
-				series[i - 20].sma10,
-				series[i - 10].sma10,
-				series[i].sma10,
-				//rie.rsma50,
-				//serie.rsma200,
-				//serie.fprogress * 100
-				//...series.slice(i - 100, i).map(s => s.close),
+				serie.rsma10,
+				serie.rsma50,
+				serie.rsma200,
+				// Math.max(series[i - 10].sma10, 0),
+				// Math.max(serie.sma10, 0),
+				// Math.min(series[i - 10].sma10, 0),
+				// Math.min(serie.sma10, 0),
 			];
-
-			// xs.push([
-			// 	// serie.future.progress > 0 ? 1 : 0,
-			// 	// serie.future.progress < 0 ? 1 : 0
-			// 	prepare(serie.rsma10),
-			// 	prepare(serie.rsma50),
-			// 	prepare(serie.rsma200),
-			// 	// Math.max(serie.rsma10, 0),
-			// 	// Math.max(serie.rsma50, 0),
-			// 	// Math.max(serie.rsma200, 0),
-			// 	// Math.max(serie.rsma10 * -1, 0),
-			// 	// Math.max(serie.rsma50 * -1, 0),
-			// 	// Math.max(serie.rsma200 * -1, 0),
-			// ]);
-	
-			const prog = serie.fprogress * 100;
-
-			const areas = [-100, -50, -10, -5, -2, -1, 0, 1, 2, 5, 10, 50, 100];
-			serie.ys = [0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-
-			areas.forEach((a, i) => {
-				if (i === 0) {
-					return;
-				}
-
-				if (prog > areas[i-1] && prog < a) {
-					serie.ys[i-1]++;
-					serie.ys[i] += 2;
-					serie.ys[i+1]++;
-				}
-				// if (a > prog) {
-				// 	for(let a = 0; a < i; a++) {
-				// 		serie.ys[a]++;
-				// 	}
-				// }
-				// if (a < prog) {
-				// 	for(let a = i; a < areas.length; a++) {
-				// 		serie.ys[a]++;
-				// 	}
-				// }
-			})
-			//console.log(prog, serie.ys.join(''));
-
-
-			//console.log(serie.fprogress * 1000);
-			//ys[ys.length - 1].print();
-			//console.log('AAA', prog, ys[ys.length - 1].join(''));
-
-			//console.log(xs[xs.length - 1], ' => ', ys[ys.length - 1]);
 		}
+
+		series.sort((a,b) => a.fprogress - b.fprogress);
+
+		const groupCount = config.groups;
+		const groups = new Array(groupCount).fill(0).map((_,i) => {
+			const from = series.length / groupCount * i;
+			const to = from + series.length / groupCount;
+			return series.slice(from, to);
+		});
+
+		groups.forEach((group, index) => {
+			const min = Math.min(...group.map(s => s.fprogress))
+			const max = Math.max(...group.map(s => s.fprogress))
+
+			console.log('Group', index, 'from', min, 'to', max);
+
+			group.forEach(s => {
+				s.ys = new Array(groups.length).fill(0);
+				s.ys[index] = 1;
+				s.groupIndex = index;
+			})
+		})
 	},
 
 	async trainModel(series, config) {
 		const { optimizer, activation, loss, epochs, lr } = config;
-		console.log(JSON.stringify(config, null, 4).replace(/"/g, ''));
+		//console.log(JSON.stringify(config, null, 4).replace(/"/g, ''));
 
 		const trainingSeries = series.filter(k => k.xs && k.ys);
 		const inputCount = trainingSeries[0].xs.length;
 		const outputCount = trainingSeries[0].ys.length;
 		const model = tf.sequential();
 		model.add(tf.layers.dense({ units: inputCount, activation, inputShape: inputCount }));
-		model.add(tf.layers.dropout({ rate: 0.2 }));
-		model.add(tf.layers.dense({ units: inputCount * 2 }));
-		model.add(tf.layers.dense({ units: outputCount * 2 }));
-		model.add(tf.layers.dense({ units: outputCount }));
+		model.add(tf.layers.dense({ units: inputCount, activation }));
+		model.add(tf.layers.dense({ units: outputCount, activation}));
+		model.add(tf.layers.dense({ units: outputCount, activation }));
 		model.compile({
-			optimizer,
+			optimizer: tf.train.adam(lr),
 			loss,
-			lr,
+			//lr,
 			metrics: ['accuracy']
 		});
 
@@ -186,9 +138,10 @@ module.exports = {
 		await model.fit(xs, ys, {
 			epochs,
 			verbose: 0,
+			shuffle: false,
 			callbacks: {
 				onEpochEnd: async (epoch, logs) => {
-
+					
 					if (epoch % (epochs / 5) === 0) {
 						if (true) {
 						// if (lastLoss > logs.loss) {
@@ -209,15 +162,37 @@ module.exports = {
 
 		//model.summary();
  
-		const getter = (index) => tf.tensor2d(trainingSeries.filter((a,i) => i === index).map(k => k.xs));
-		model.predict(getter(0, 10, 50)).print();
+		const round = (x) => Math.round(x * 10) / 10;
+		const predict = (index) => {
+			const serie = trainingSeries.filter((a,i) => i === index)[0];
+			const input = tf.tensor2d([serie.xs]);
+			//const output = new Array(model.predict(input).dataSync())[0];
+			const output = tf.tensor2d([serie.ys]);
+			model.evaluate(input, output);
+
+			const max = Math.max(...output);
+			const result = output.indexOf(max);
+			const expected = serie.groupIndex;
+			
+			return output.filter((o, i) => {
+				return i === expected && o === max;
+			}).length > 0;
+		}
+
+		const test = (indexesToBeTested) => {
+			const right = indexesToBeTested.map(predict).reduce((a,b) => a+b, 0);
+			const total = indexesToBeTested.length;
+	
+			const accuracy = right / total;
+			console.log(Object.values(config).join('/'), '=> ACCURACY:', accuracy * 100, '%');
+			return accuracy;
+		}
+
+		const accuracy = test([44,53,76,45,88,120,520,540,760,800, 322, 344, 255, 655, 766, 354, 77, 125, 162, 711]);
+		if (accuracy > 0.5) {
+			test([44,53,76,45,88,120,520,540,760,800, 322, 344, 255, 655, 766, 354, 77, 125, 162, 711].map(k => k+1));
+		}
 
 		return model;
 	},
-
-	predictLatest(model, serie) {
-		console.log('predict ...');
-		const prediction = model.predict(tf.tensor1d(serie.indicators));
-		prediction.print();
-	}
 }
