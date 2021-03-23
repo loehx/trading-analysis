@@ -2,14 +2,17 @@
 
 var moment = require('moment');
 var core = require('./core');
+var data = require('./data');
 
 (async () => {
 	try {
 		const symbol = '^IXIC';
 		const yearsAgo = (y) => moment().add(-y, 'years');
-		const timeSeries = [
-			...await core.getTimeSeriesFromYahoo(symbol, yearsAgo(1)),
-		];
+		const timeSeries = await data.getData('NASDAQ_HOURLY');
+		core.validateTimeSeries(timeSeries, { verbose: true });
+		const vixSeries = await data.getData('VIX_HOURLY');
+		core.validateTimeSeries(vixSeries, { verbose: false });
+		core.integrateVixIntoTimeSeries(vixSeries, timeSeries);
 		core.prepareTimeSeries(timeSeries);
 		core.prepareTraining(timeSeries, {
 			groups: 2
@@ -19,14 +22,14 @@ var core = require('./core');
 			//'elu',
 			// 'hardSigmoid',
 			// 'linear',
-			'relu',
+			// 'relu',
 			//'relu6',
 			//'selu',
 			//'sigmoid',
 			//'softmax',
 			//'softplus',
 			//'softsign',
-			// 'tanh'
+			'tanh'
 		];
 		const optimizers = [
 			//'sgd',
@@ -42,42 +45,20 @@ var core = require('./core');
 			'meanSquaredError',
 		]
 
-		const lrs = [
-			1,
-			3,
-			0.1,
-			0.3,
-			0.01,
-			0.03,
-			0.001,
-			0.0003,
-			0.0003,
-			0.0003,
-			0.0001,
-			0.0001,
-			0.0001,
-		]
-
 		for (let optimizer of optimizers) {
 			for (let activation of activations) {
 				for (let loss of losses) {
-					for (let lr of lrs) {
-						// optimizer = 'sgd';
-						// activation = 'relu';
-						// loss = 'binaryCrossentropy';
-						await core.trainModel(timeSeries, {
-							optimizer,
-							activation,
-							loss,
-							epochs: 50,
-							lr
-						});
-					}
+					await core.trainModel(timeSeries, {
+						optimizer,
+						activation,
+						loss,
+						epochs: 500
+					});
 				}
 			}
 		}
 
 	} catch (error) {
-		console.error('error', error.message);
+		console.error('error', error.message || error);
 	}
 })();
