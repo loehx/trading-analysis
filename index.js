@@ -48,12 +48,14 @@ var data = require('./src/data');
 		for (let optimizer of optimizers) {
 			for (let activation of activations) {
 				for (let loss of losses) {
-					await core.trainModel(timeSeries, {
-						optimizer,
-						activation,
-						loss,
-						epochs: 200
-					});
+					for(let i = 0; i < 5; i++) {
+						await core.trainModel(timeSeries, {
+							optimizer,
+							activation,
+							loss,
+		 					epochs: 10
+						});
+					}
 				}
 			}
 		}
