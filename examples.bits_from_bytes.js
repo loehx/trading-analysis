@@ -15,7 +15,7 @@ async function go() {
 		.map(k => resize(k, bits, 0));
 	const training_data = tf.oneHot(numbers, range);
 	const target_data = tf.tensor2d(numbers_as_bits);
-
+	
 	const model = tf.sequential();
 	model.add(tf.layers.dense({ units: 64, activation: 'tanh', inputShape: range }));
 	model.add(tf.layers.dense({ units: bits }));

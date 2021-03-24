@@ -31,8 +31,37 @@ module.exports = {
         if (fileType === 'csv') {
             return lines.map(lineConverter).filter(k => k);
         }
-    }
-    
+    },
+
+    async getTimeSeriesFromYahoo(symbol, from, to) {
+		const response = await axios.get('https://query1.finance.yahoo.com/v8/finance/chart/', {
+			params: {
+				symbol,
+				period1: moment(from).unix(),
+				period2: moment(to).unix(),
+				interval: '1h',
+				lang: 'en-US'
+			}
+		})
+
+		const data = response.data.chart.result[0];
+		const timestamp = data.timestamp;
+		const { low, close, high, volume, open } = data.indicators.quote[0];
+
+		const timeSeries = new Array(timestamp.length);
+		for (let i = 0; i < timestamp.length; i++) {
+			timeSeries[i] = {
+				timestamp: timestamp[i],
+				low: low[i],
+				high: high[i],
+				open: open[i],
+				close: close[i],
+				volume: volume[i],
+			}
+		}
+
+		return timeSeries;
+	},
 }
 
 function backtestMarketCsvConverter(line) {
