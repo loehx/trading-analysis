@@ -72,6 +72,8 @@ module.exports = {
 			atrs: [2, 3, 4, 8, 16, 24, 2*24, 3*24, 4*24, 5*24, 7*24, 14*24, 30*24],
 		};
 
+		const avgVolume = series.map(s => s.volume).reduce(function(p,c,i,a){return p + (c/a.length)},0);
+
 		const smas = config.smas.map(period => [...new Array(period).fill(0), ...SMA.calculate({ period, values: closes })]);
 		const atrs = config.atrs.map(period => [...new Array(period).fill(0), ...ATR.calculate({ period, high: highs, low: lows, close: closes })]);
 	
@@ -104,13 +106,23 @@ module.exports = {
 				...serie.atrs
 			];
 
+			if (prev) {
+				// relative indicators
+				serie.rindicators = serie.indicators
+					.map((s, i) => s / prev.indicators[i] - 1).map(n => isNaN(n) ? 0 : n);
+			}
+
 			if (prev && i >= 200) {
+
+				//const channel_max = Math.max(...closes.slice(i - n, i));
+
 				serie.xs = [
 					...util.oneHot(serie.progress*2, [-5, 5], true),
 
-					...serie.indicators
-				 	 	.map((s, i) => s / prev.indicators[i] - 1).map(n => isNaN(n) ? 0 : n)
-					  	.map(s => s > 0 ? 1 : 0),
+					...serie.rindicators.map(s => s > 0 ? 1 : 0),
+
+					...serie.rindicators.map((s, i) => s > 0 && prev.rindicators[i] < 0 ? 1 : 0),
+					...serie.rindicators.map((s, i) => s < 0 && prev.rindicators[i] > 0 ? 1 : 0),
 
 					...serie.smas.map((s,i) => s - (serie.smas[i - 1] || s)).map(n => n > 0 ? 1 : 0),
 					...serie.atrs.map((s,i) => s - (serie.atrs[i - 1] || s)).map(n => n > 0 ? 1 : 0),
@@ -119,34 +131,32 @@ module.exports = {
 					...util.oneHot(serie.timestamp.get('hour'), [0, 23]),
 
 					// n hours high (broke through resistance)
-					...[1, 2, 3, 4, 12, 24, 48, 3*24].map(n => Math.max(...closes.slice(i - n, i)) === closes[i] ? 1 : 0)
+					...[1, 2, 3, 4, 12, 24, 48, 3*24].map(n => Math.max(...closes.slice(i - n, i)) === closes[i] ? 1 : 0),
+
+					avgVolume > serie.volume ? 1 : 0
 				]
-				// if ((i +1) % 1000 === 0) {
+
+				if ((i +1) % 1000 === 0) {
 				// debugger;
-				// }
+				}
 			}
 		}
+
 		return;
 		console.log('done');
 	},
 
 	prepareTraining(series, config) {
-		const HOURS_TO_PREDICT = 8;
+		const { groupCount = 2, hoursToPredict = 8, propName = 'sma8'} = config;
 
-		series = series.filter(s => s.sma8);
-		series.slice(0, series.length - HOURS_TO_PREDICT).forEach((s, i) => {
-				s.fprogress = (s.close / series[i + HOURS_TO_PREDICT].sma8 - 1) * 100;
+		series = series.filter(s => s[propName]);
+		series.slice(0, series.length - hoursToPredict).forEach((s, i) => {
+				s.fprogress = (s.close / series[i + hoursToPredict][propName] - 1) * 100;
 			});
 		series = series.filter(s => !isNaN(s.fprogress) && isFinite(s.fprogress))
 
-		// series.slice(0, series.length - HOURS_TO_PREDICT).forEach((s, i) => {
-		// 		s.fprogress = (s.close / series[i + HOURS_TO_PREDICT].close - 1) * 100;
-		// 	});
-		// series = series.filter(s => !isNaN(s.fprogress) && isFinite(s.fprogress))
-
 		series.sort((a,b) => a.fprogress - b.fprogress);
 
-		const groupCount = config.groups;
 		const groups = new Array(groupCount).fill(0).map((_,i) => {
 			const from = series.length / groupCount * i;
 			const to = from + series.length / groupCount;
@@ -180,9 +190,12 @@ module.exports = {
 		const outputCount = trainingSeries[0].ys.length;
 		const model = tf.sequential();
 		model.add(tf.layers.dense({ units: 64, activation, inputShape: inputCount }));
-		//model.add(tf.layers.dropout(0.2))
+		model.add(tf.layers.dropout(0.1))
 		model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
-		model.add(tf.layers.dense({ units: 8 }));
+		model.add(tf.layers.dropout(0.1))
+		model.add(tf.layers.dense({ units: 16, activation: 'relu' }));
+		model.add(tf.layers.dropout(0.1))
+		model.add(tf.layers.dense({ units: 8, activation: 'relu'  }));
 		model.add(tf.layers.dense({ units: outputCount, activation: 'softmax' }));
 		model.compile({
 			optimizer,
@@ -193,13 +206,22 @@ module.exports = {
 
 		//model.summary();
 
-		console.log('Start training with ' + trainingSeries.length + ' datasets...');
+		// console.log(trainingSeries.slice(0, 20).map(s => s.xs.join('')).join('\n') + '...');
+		// console.log(trainingSeries.slice(series.length - 20).map(s => s.xs.join('')).join('\n'));
+
+		console.log('Start training ...');
+		console.log(JSON.stringify({
+			trainingData: trainingSeries.length,
+			validationData: validationSeries.length,
+			inputCount,
+			outputCount,
+			config
+
+		}, null, 4));
 		xs = tf.tensor2d(trainingSeries.map(k => k.xs));
 		// negative testing
 		// xs = tf.tensor2d(trainingSeries.map(k => new Array(k.xs.length).fill(0).map(n => Math.random() - 0.5 > 0 ? 1 : 0)));
 		ys = tf.tensor2d(trainingSeries.map(k => k.ys));
-		xs.print();
-		ys.print();
 		val_xs = tf.tensor2d(validationSeries.map(k => k.xs));
 		val_ys = tf.tensor2d(validationSeries.map(k => k.ys));
 		const start = new Date();
@@ -217,10 +239,13 @@ module.exports = {
 						lastLogs = logs;
 					}
 					
-					console.log('#' + no, 
-						Math.round(logs.val_acc*1000000) / 1000000, 
-						'after', (new Date() - start) / 1000, 'sec.', 
-						Math.round((logs.val_acc / lastLogs.val_acc - 1) * 1000000) / 1000000 * 100 + ' % improved');
+					console.log('epoch #' + no, 
+						'val_acc:',
+						Math.round(logs.val_acc*100000) / 1000, 
+						'sec:', 
+						(new Date() - start) / 1000, 
+						'impr:',
+						Math.round((logs.val_acc / lastLogs.val_acc - 1) * 100000) / 1000);
 					lastLogs = logs;
 				}
 			}

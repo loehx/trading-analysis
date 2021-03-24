@@ -13,7 +13,9 @@ var data = require('./src/data');
 		//core.integrateVixIntoTimeSeries(vixSeries, timeSeries);
 		core.prepareTimeSeries(timeSeries);
 		core.prepareTraining(timeSeries, {
-			groups: 2
+			groupCount: 2,
+			hoursToPredict: 8,
+			propName: 'sma8'
 		});
 
 		const activations = [
@@ -36,7 +38,7 @@ var data = require('./src/data');
 		];
 		const losses = [
 			//'binaryCrossentropy',
-			'categoricalCrossentropy',
+			//'categoricalCrossentropy',
 			//'cosineProximity',
 			//'meanAbsoluteError',
 			//'meanAbsolutePercentageError',
@@ -50,13 +52,13 @@ var data = require('./src/data');
 						optimizer,
 						activation,
 						loss,
-						epochs: 10
+						epochs: 200
 					});
 				}
 			}
 		}
 
 	} catch (error) {
-		console.error('error', error.message || error);
+		console.error('error', error.stack || error.message || error);
 	}
 })();
