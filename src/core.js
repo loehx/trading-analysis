@@ -66,7 +66,7 @@ module.exports = {
 		const highs = series.map(s => s.high);
 		const lows = series.map(s => s.low);
 		const closes = series.map(s => s.close);
-		const lookBack = [2, 3, 4, 8, 16, ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 30].map(n => n * 24)];
+		const lookBack = [2, 3, 4, 8, 16, ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 200].map(n => n * 24)];
 
 		const avgVolume = series.map(s => s.volume).reduce(function (p, c, i, a) { return p + (c / a.length) }, 0);
 
@@ -118,10 +118,7 @@ module.exports = {
 				serie.xs = [
 
 					// 51.5%
-					//...[].concat(...serie.rsis.map(rsi => rsi > 50 ? 1 : 0)),
-		
-				
-					//serie.rsis.map(rsi => util.oneHot(rsi, [0,100]))
+					...[].concat(...serie.rsis.map(rsi => rsi > 50 ? 1 : 0)),
 
 					// 51.5% (volume, smas, atrs)
 					...serie.rindicators.map(s => s > 0 ? 1 : 0),
@@ -132,23 +129,23 @@ module.exports = {
 
 
 					// acc: 53%
-					//...serie.smas.map((s, i) => s - (serie.smas[i - 1] || s)).map(n => n > 0 ? 1 : 0),
+					...serie.smas.map((s, i) => s - (serie.smas[i - 1] || s)).map(n => n > 0 ? 1 : 0),
 
 					// acc: 51.5%
-					//...serie.atrs.map((s,i) => s - (serie.atrs[i - 1] || s)).map(n => n > 0 ? 1 : 0),
+					...serie.atrs.map((s,i) => s - (serie.atrs[i - 1] || s)).map(n => n > 0 ? 1 : 0),
 
 					// acc: 50.5%
-					//...util.oneHot(serie.timestamp.isoWeekday(), [1, 7]),
+					...util.oneHot(serie.timestamp.isoWeekday(), [1, 7]),
 
 					// acc: 51.5%
-					//...util.oneHot(serie.timestamp.get('hour'), [0, 23]),
+					...util.oneHot(serie.timestamp.get('hour'), [0, 23]),
 
 					// acc: 51.6%
 					//...[1, 2, 3, 4, 12, 24, 48, 3*24, 7*24, 30*24, 90*24].map(n => Math.max(...closes.slice(i - n, i+1)) === serie.close ? 1 : 0),
 					//...[1, 2, 3, 4, 12, 24, 48, 3*24, 7*24, 30*24, 90*24].map(n => Math.min(...closes.slice(i - n, i+1)) === serie.close ? 1 : 0),
 
 					// acc: 52%
-					//...util.oneHot(serie.volume / avgVolume, [0, 6], true),
+					...util.oneHot(serie.volume / avgVolume, [0, 6], true),
 				]
 
 				if ((i + 1) % 1000 === 0) {
@@ -193,7 +190,7 @@ module.exports = {
 	},
 
 	async trainModel(series, config) {
-		const { optimizer, activation, loss, epochs, lr } = config;
+		const { optimizer, activation, loss, epochs, lr, fakeInput } = config;
 		//console.log(JSON.stringify(config, null, 4).replace(/"/g, ''));
 
 		series = series.filter(k => k.xs && k.ys);
@@ -205,36 +202,45 @@ module.exports = {
 		const outputCount = trainingSeries[0].ys.length;
 		const model = tf.sequential();
 		model.add(tf.layers.dense({ units: 64, activation, inputShape: inputCount }));
-		model.add(tf.layers.dropout(0.1))
+		// model.add(tf.layers.dropout(0.25))
+		// model.add(tf.layers.dense({ units: 48, activation }));
+		model.add(tf.layers.dropout(0.2))
 		model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
 		model.add(tf.layers.dropout(0.1))
+		model.add(tf.layers.dense({ units: 8, activation: 'softmax' }));
 		model.add(tf.layers.dense({ units: outputCount, activation: 'softmax' }));
 		model.compile({
 			optimizer,
 			loss,
-			//lr: 0.3,
+			//lr: 0.001,
 			metrics: ['accuracy']
 		});
 
-		model.summary();
+		if (!fakeInput) {
+			model.summary();
 
-		console.log(trainingSeries.slice(0, 20).map(s => s.xs.join('')).join('\n') + '...');
-		console.log(trainingSeries.slice(series.length - 20).map(s => s.xs.join('')).join('\n'));
+			console.log(trainingSeries.slice(0, 20).map(s => s.xs.join('')).join('\n') + '...');
+			console.log(trainingSeries.slice(series.length - 20).map(s => s.xs.join('')).join('\n'));
 
-		console.log('Start training ...');
-		console.log(JSON.stringify({
-			trainingData: trainingSeries.length,
-			validationData: validationSeries.length,
-			inputCount,
-			outputCount,
-			config
+			console.log('Start training ...');
+			console.log(JSON.stringify({
+				trainingData: trainingSeries.length,
+				validationData: validationSeries.length,
+				inputCount,
+				outputCount,
+				config
 
-		}, null, 4));
-		xs = tf.tensor2d(trainingSeries.map(k => k.xs));
-		// negative testing
-		// xs = tf.tensor2d(trainingSeries.map(k => new Array(k.xs.length).fill(0).map(n => Math.random() - 0.5 > 0 ? 1 : 0)));
+			}, null, 4));
+		}
+	
+		if (fakeInput) {
+			xs = tf.tensor2d(trainingSeries.map(k => new Array(k.xs.length).fill(0).map(n => Math.random() > 0.5 ? 1 : 0)));
+		}
+		else {
+			xs = tf.tensor2d(trainingSeries.map(k => k.xs));
+		}
 		ys = tf.tensor2d(trainingSeries.map(k => k.ys));
-		val_xs = tf.tensor2d(validationSeries.map(k => k.xs));
+		val_xs = tf.tensor2d(validaionSeries.map(k => k.xs));
 		val_ys = tf.tensor2d(validationSeries.map(k => k.ys));
 		const start = new Date();
 		let lastLogs;
@@ -242,7 +248,7 @@ module.exports = {
 			epochs,
 			verbose: 0,
 			shuffle: false,
-			batchSize: 200,
+			batchSize: 32,
 			validationData: [val_xs, val_ys],
 			callbacks: {
 				onEpochEnd: async (epoch, logs) => {

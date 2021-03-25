@@ -15,7 +15,7 @@ var data = require('./src/data');
 		core.prepareTraining(timeSeries, {
 			groupCount: 2,
 			hoursToPredict: 8,
-			propName: 'sma8'
+			propName: 'close'
 		});
 
 		const activations = [
@@ -48,12 +48,21 @@ var data = require('./src/data');
 		for (let optimizer of optimizers) {
 			for (let activation of activations) {
 				for (let loss of losses) {
+
+					await core.trainModel(timeSeries, {
+						optimizer,
+						activation,
+						loss,
+						epochs: 3,
+						fakeInput: true
+					});
+
 					for(let i = 0; i < 5; i++) {
 						await core.trainModel(timeSeries, {
 							optimizer,
 							activation,
 							loss,
-		 					epochs: 10
+		 					epochs: 500
 						});
 					}
 				}

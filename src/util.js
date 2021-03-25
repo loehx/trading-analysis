@@ -1,3 +1,4 @@
+const { range } = require('@tensorflow/tfjs-core');
 var moment = require('moment');
 
 const util = module.exports = {
@@ -23,6 +24,15 @@ const util = module.exports = {
         const i = Math.round(value) - from;
         r[i] = 1;
         return r;
+    },
+
+    range(start, end, step = 1) {
+        const count = end - start;
+        const result = new Array((count/step) + 1);
+        for(let i = start; i <= end; i+=step) {
+            result[i - start] = i;
+        }
+        return result;
     }
 
 };
