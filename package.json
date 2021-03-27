@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "jest --watch",
+    "test": "jest --verbose"
   },
   "repository": {
     "type": "git",
@@ -21,5 +22,8 @@
     "axios": "^0.21.1",
     "moment": "^2.29.1",
     "technicalindicators": "^3.1.0"
+  },
+  "devDependencies": {
+    "jest": "^26.6.3"
   }
 }
