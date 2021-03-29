@@ -1,8 +1,9 @@
 const moment = require("moment");
 const Data = require("./Data");
 const { ensure, assert } = require("./assertion");
-var { ATR, SMA, RSI } = require('technicalindicators');
 const util = require("../shared/util");
+const indicators = require("./indicators");
+
 
 module.exports = class DataSeries {
 
@@ -72,38 +73,28 @@ module.exports = class DataSeries {
 	}
 	
 	getSMA(period) {
-		const getter = () => [
-			...new Array(period-1).fill(null), 
-			...SMA.calculate({ 
-				period, 
-				values: this.closes 
-			})
-		];
+		const getter = () => indicators.getSMA(period, this.closes);
 		return this.__getCached('sma'+period, getter);
 	}
 
+	getWMA(period) {
+		const getter = () => indicators.getWMA(period, this.closes);
+		return this.__getCached('wma'+period, getter);
+	}
+
 	getRSI(period) {
-		const getter = () => [
-			...new Array(period).fill(null), 
-			...RSI.calculate({ 
-				period, 
-				values: this.closes 
-			})
-		];
+		const getter = () => indicators.getRSI(period, this.closes);
 		return this.__getCached('rsi'+period, getter);
 	}
 
 	getATR(period) {
-		const getter = () => [
-			...new Array(period).fill(null), 
-			...ATR.calculate({ 
-				period, 
-				high: this.highs, 
-				low: this.lows, 
-				close: this.closes
-			})
-		];
+		const getter = () => indicators.getATR(period, this.highs, this.lows, this.closes);
 		return this.__getCached('atr'+period, getter);
+	}
+
+	getCandlePatterns() {
+		const getter = () => indicators.getCandlePatterns(this.opens, this.highs, this.closes, this.lows);
+		return this.__getCached('cap', getter);
 	}
 
 	__getCached(key, getter) {

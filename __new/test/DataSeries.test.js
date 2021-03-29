@@ -88,7 +88,13 @@ test('.getSMA()', () => {
 	expect(series.getSMA(3)).toStrictEqual([null, null, 3, 4, 5]);
 })
 
-test('.getSMA()', () => {
+test('.getWMA()', () => {
+	const series = DataSeries.mock(5, 1, 'hour');
+	expect(series.getWMA(2)).toStrictEqual([null, 2.6666666666666665, 3.6666666666666665, 4.666666666666667, 5.666666666666667]);
+	expect(series.getWMA(3)).toStrictEqual([null, null, 3.333333333333333, 4.333333333333333, 5.333333333333334]);
+})
+
+test('.getRSI()', () => {
 	const series = DataSeries.mock(5, 1, 'hour');
 	expect(series.getRSI(2)).toStrictEqual([null, null, 100, 100, 100]);
 	expect(series.getRSI(3)).toStrictEqual([null, null, null, 100, 100]);
@@ -98,6 +104,13 @@ test('.getATR()', () => {
 	const series = DataSeries.mock(5, 1, 'hour');
 	expect(series.getATR(2)).toStrictEqual([null, null, 3, 3, 3]);
 	expect(series.getATR(3)).toStrictEqual([null, null, null, 3, 3]);
+})
+
+test('.getCandlePatterns()', () => {
+	const series = DataSeries.mock(5, 1, 'hour');
+	const patterns = series.getCandlePatterns();
+	expect(patterns.bearishspinningtop).toStrictEqual([null, null, 1, 1, 1]);
+	expect(patterns.abandonedbaby).toStrictEqual([null, null, 0, 0, 0]);
 })
 
 test('.toArray()', () => {
