@@ -1,4 +1,5 @@
 var moment = require('moment');
+const { ensure } = require('./assertion');
 
 const util = module.exports = {
 
@@ -33,4 +34,9 @@ const util = module.exports = {
         }
         return result;
     },
+
+    avg(...args) {
+        ensure(args);
+        return args.reduce((a, x) => a + (x / args.length), 0);
+    }
 };

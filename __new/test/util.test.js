@@ -28,4 +28,10 @@ describe('util', () => {
     ])('.range(%p, %p, %p)', (start, end, step, expected) => {
         expect(util.range(start, end, step)).toStrictEqual(expected);
     });
+
+    test.each([
+        [0, 1, 2, 1],
+    ])('.avg(%p, %p, %p)', (a,b,c, expected) => {
+        expect(util.avg(a,b,c)).toStrictEqual(expected);
+    });
 })

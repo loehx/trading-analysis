@@ -23,7 +23,7 @@ const assertion = module.exports = {
         let err;
 
         if (typeof validator === 'undefined') {
-            if (isNaN(value)) {
+            if (isNaN(value) && value !== value) {
                 err = 'Value should not be NaN';
             }
             if (value === null) {

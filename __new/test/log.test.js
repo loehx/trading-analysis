@@ -1,6 +1,6 @@
 const { Log } = require('../src/shared/log');
 
-describe('', () => {
+describe('log', () => {
 
     test('new Log()', () => {
         const log = new Log('Test');

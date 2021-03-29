@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">57.14% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>12/21</span>
+                <span class='fraction'>18/21</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.67% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>8/12</span>
+                <span class='fraction'>9/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">60% </span>
+                <span class="strong">85% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>12/20</span>
+                <span class='fraction'>17/20</span>
             </div>
         
             
@@ -55,7 +55,7 @@
             Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
         </p>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -92,9 +92,9 @@
 <a name='L33'></a><a href='#L33'>33</a>
 <a name='L34'></a><a href='#L34'>34</a>
 <a name='L35'></a><a href='#L35'>35</a>
-<a name='L36'></a><a href='#L36'>36</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L36'></a><a href='#L36'>36</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
@@ -120,19 +120,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">32x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">var moment = require('moment');
 &nbsp;
 const util = module.exports = {
 &nbsp;
     oneHot(value, range, ignoreOverflow) {
-        const [ from, to ] = range;
+        const [from, to] = range;
         const r = new Array(to - from + 1).fill(0);
 &nbsp;
         <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof value === 'undefined') {
@@ -154,13 +154,13 @@ const util = module.exports = {
         return r;
     },
 &nbsp;
-<span class="fstat-no" title="function not covered" >    ra</span>nge(start, end, step = <span class="branch-0 cbranch-no" title="branch not covered" >1)</span> {
-        const count = <span class="cstat-no" title="statement not covered" >end - start;</span>
-        const result = <span class="cstat-no" title="statement not covered" >new Array((count/step) + 1);</span>
-<span class="cstat-no" title="statement not covered" >        for(let i = <span class="cstat-no" title="statement not covered" >start;</span> i &lt;= end; i+=step) {</span>
-<span class="cstat-no" title="statement not covered" >            result[i - start] = i;</span>
+    range(start, end, step = 1) {
+        const count = end - start;
+        const result = new Array();
+        for (let i = start; i &lt;= end; i += step) {
+            result.push(i);
         }
-<span class="cstat-no" title="statement not covered" >        return result;</span>
+        return result;
     },
 };</pre></td></tr></table></pre>
 
@@ -169,7 +169,7 @@ const util = module.exports = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank">istanbul</a>
-                at Thu Mar 25 2021 18:25:05 GMT+0100 (Central European Standard Time)
+                at Sat Mar 27 2021 16:43:33 GMT+0100 (Central European Standard Time)
             </div>
         </div>
         <script src="prettify.js"></script>
