@@ -13,7 +13,7 @@ module.exports = class Data {
 		ensure(open, Number);
 		ensure(close, Number);
 
-		this.timestamp = moment(timestamp).toDate();
+		this.timestamp = moment.utc(timestamp).toDate();
 		this.low = low;
 		this.high = high;
 		this.open = open;

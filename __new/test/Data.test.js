@@ -91,6 +91,6 @@ test('.toJSON()', () => {
 	});
 	
 	const json = JSON.stringify(data);
-	expect(json).toBe('{"timestamp":"2019-12-31T23:00:00.000Z","low":1,"high":1,"open":1,"close":1}');
+	expect(json).toBe('{"timestamp":"2020-01-01T00:00:00.000Z\","low":1,"high":1,"open":1,"close":1}');
 })
 
