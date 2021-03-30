@@ -21,6 +21,7 @@
     "@tensorflow/tfjs": "^3.3.0",
     "axios": "^0.21.1",
     "jest": "^26.6.3",
+    "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "technicalindicators": "^3.1.0"
   }

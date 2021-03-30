@@ -1,4 +1,5 @@
 const Data = require("../src/shared/Data");
+const DataSeries = require("../src/shared/DataSeries");
 
 test('new Data()', () => {
 	expect(() => new Data()).toThrow(Error);
@@ -76,7 +77,7 @@ test('Data validation -> timestamp', () => {
 	expect(() => new Data(data)).toThrow('Assertion Failed: timestamp is not valid');
 })
 
-test('.isAttached()', () => {
+test('.isAttached', () => {
 	const data = Data.random();
 	expect(data.isAttached).toBe(false);
 })
@@ -94,3 +95,107 @@ test('.toJSON()', () => {
 	expect(json).toBe('{"timestamp":"2020-01-01T00:00:00.000Z\","low":1,"high":1,"open":1,"close":1}');
 })
 
+test('.getPrev()', () => {
+	const series = DataSeries.mock(10, 1, 'hour');
+	const data = series.get(5);
+	expect(data.getPrev(1).length).toBe(1);
+	expect(data.getPrev(2, true).length).toBe(2);
+	expect(data.getPrev(2, true)[0]).toStrictEqual(series.get(4));
+	expect(data.getPrev(2, true)[1]).toStrictEqual(data);
+	expect(data.getPrev(10, true).length).toBe(6);
+
+	expect(data.getPrev(10, false, true).length).toBe(10);
+})
+
+test('.getSMA()', () => {
+	const series = DataSeries.mock(10, 1, 'hour');
+	const data = series.get(5);
+	expect(data.getSMA(2)).toBe(6.5);
+	expect(data.getSMA(3)).toBe(6);
+	expect(data.getSMA(4)).toBe(5.5);
+	expect(series.last.getSMA(100)).toBe(6.5);
+})
+
+test('.getRSMA()', () => {
+	const series = DataSeries.mock(5, 1, 'hour');
+	expect(series.last.getRSMA(3)).toBe(0.25);
+	expect(series.last.getRSMA(3)).toBe(0.25);
+})
+
+test('.getWMA()', () => {
+	const series = DataSeries.mock(10, 1, 'hour');
+	const data = series.get(5);
+	expect(data.getWMA(2)).toBeCloseTo(6.666);
+	expect(data.getWMA(3)).toBeCloseTo(6.333);
+	expect(data.getWMA(4)).toBe(6);
+	expect(series.last.getWMA(100)).toBe(8);
+})
+
+test('.getRWMA()', () => {
+	const series = DataSeries.mock(5, 1, 'hour');
+	expect(series.last.getRWMA(3)).toBeCloseTo(0.23);
+	expect(series.last.getRWMA(3)).toBeCloseTo(0.23);
+})
+
+test('.getRSI()', () => {
+	const series = DataSeries.mock(10, 1, 'hour');
+	const data = series.get(5);
+	expect(data.getRSI(5)).toBe(100);
+	expect(data.getRSI(4)).toBe(100);
+	expect(data.getRSI(3)).toBe(100);
+	expect(data.getRSI(2)).toBe(100);
+	expect(data.getRSI(1)).toBe(100);
+	expect(series.last.getRSI(100)).toBe(100);
+})
+
+test('.getRRSI()', () => {
+	const series = DataSeries.mock(5, 1, 'hour');
+	expect(series.last.getRRSI(3)).toBe(0);
+})
+
+test('.getATR()', () => {
+	const series = DataSeries.mock(10, 1, 'hour');
+	const data = series.get(5);
+	expect(data.getATR(5)).toBe(3);
+	expect(data.getATR(4)).toBe(3);
+	expect(data.getATR(3)).toBe(3);
+	expect(data.getATR(2)).toBe(3);
+	expect(data.getATR(1)).toBe(3);
+	expect(series.last.getATR(100)).toBe(3);
+})
+
+test('.getRATR()', () => {
+	const series = DataSeries.mock(5, 1, 'hour');
+	expect(series.last.getRATR(3)).toBe(0);
+})
+
+test('.getCandlePattern()', () => {
+	const series = DataSeries.mock(5, 1, 'hour');
+	const pattern = series.last.getCandlePattern();
+
+	expect(pattern.abandonedbaby).toBe(0); 
+	expect(pattern.bearish).toBe(0); 
+	expect(pattern.bearishengulfingpattern).toBe(0); 
+	expect(pattern.bearishharami).toBe(0); 
+	expect(pattern.bearishharamicross).toBe(0); 
+	expect(pattern.bearishmarubozu).toBe(0); 
+	expect(pattern.bearishspinningtop).toBe(1); 
+	expect(pattern.bullish).toBe(0); 
+	expect(pattern.bullishengulfingpattern).toBe(0); 
+	expect(pattern.bullishharami).toBe(0); 
+	expect(pattern.bullishharamicross).toBe(0); 
+	expect(pattern.bullishmarubozu).toBe(0); 
+	expect(pattern.bullishspinningtop).toBe(0); 
+	expect(pattern.darkcloudcover).toBe(0); 
+	expect(pattern.doji).toBe(0); 
+	expect(pattern.downsidetasukigap).toBe(0); 
+	expect(pattern.dragonflydoji).toBe(0); 
+	expect(pattern.eveningdojistar).toBe(0); 
+	expect(pattern.eveningstar).toBe(0); 
+	expect(pattern.gravestonedoji).toBe(0); 
+	expect(pattern.morningdojistar).toBe(0); 
+	expect(pattern.morningstar).toBe(0); 
+	expect(pattern.piercingline).toBe(0); 
+	expect(pattern.threeblackcrows).toBe(0); 
+	expect(pattern.threewhitesoldiers).toBe(0);
+})

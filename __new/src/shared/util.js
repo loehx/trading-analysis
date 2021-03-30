@@ -1,5 +1,7 @@
+const { memoize } = require('lodash');
 var moment = require('moment');
 const { ensure } = require('./assertion');
+const _ = require('lodash');
 
 const util = module.exports = {
 
@@ -38,5 +40,9 @@ const util = module.exports = {
     avg(...args) {
         ensure(args);
         return args.reduce((a, x) => a + (x / args.length), 0);
-    }
+    },
+
+    memoize(fn) {
+        return _.memoize(fn, (...a) => new Array(a).join('_'));
+    },
 };

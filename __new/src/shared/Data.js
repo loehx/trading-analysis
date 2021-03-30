@@ -1,5 +1,7 @@
 const moment = require("moment");
 const { ensure, assert } = require("./assertion");
+const indicators = require("./indicators");
+const util = require("./util");
 
 
 module.exports = class Data {
@@ -43,9 +45,91 @@ module.exports = class Data {
 		return !!this.dataSeries;
 	}
 
+	get prev() {
+		if (!this.isAttached) {
+			return null;
+		}
+		return this.dataSeries.get(this.index - 1) || null;
+	}
+
+	get next() {
+		if (!this.isAttached) {
+			return null;
+		}
+		return this.dataSeries.get(this.index + 1) || null;
+	}
+
+	getPrev(n, includeSelf = false, padding = false) {
+		return this._getCached(`${n}${includeSelf}${padding}`, () => {
+			this._requireAttachment();
+			const s = includeSelf ? 1 : 0;
+			const start = this.index - n + s;
+			const result = this.dataSeries.toArray(Math.max(start, 0), start < 0 ? n + start : n);
+			if (padding) {
+				return new Array(n - this.index).fill(null).concat(result);
+			}
+			return result;
+		})
+	}
+
 	getSMA(period) {
-		assert(this.isAttached, 'Data must be attached to a DataSerie');
-		this.dataSeries.getSMA(period)[this.index];
+		const prev = this.getPrev(period, true);
+		return indicators.getSMA(prev.map(d => d.close));
+	}
+
+	getRSMA(period) {
+		const current = this.getSMA(period);
+		const prev = this.prev.getSMA(period);
+		return current / prev - 1;
+	}
+
+	getWMA(period) {
+		const prev = this.getPrev(period, true);
+		return indicators.getWMA(prev.map(d => d.close));
+	}
+
+	getRWMA(period) {
+		const current = this.getWMA(period);
+		const prev = this.prev.getWMA(period);
+		return current / prev - 1;
+	}
+
+	getRSI(period) {
+		const prev = this.getPrev(period + 1, true);
+		return indicators.getRSI(prev.map(d => d.close));
+	}
+
+	getRRSI(period) {
+		const current = this.getRSI(period);
+		const prev = this.prev.getRSI(period);
+		return current / prev - 1;
+	}
+
+	getATR(period) {
+		const prev = this.getPrev(period + 1, true);
+		return indicators.getATR(
+			prev.map(d => d.high),
+			prev.map(d => d.low),
+			prev.map(d => d.close)
+		);
+	}
+
+	getRATR(period) {
+		const current = this.getATR(period);
+		const prev = this.prev.getATR(period);
+		return current / prev - 1;
+	}
+
+	getCandlePattern() {
+		return this._getCached('candlePattern', () => {
+			const prev = this.getPrev(4, true);
+			return indicators.getCandlePattern(		
+				prev.map(d => d.open),
+				prev.map(d => d.high),
+				prev.map(d => d.close),
+				prev.map(d => d.low)
+			);
+		})
 	}
 
 	toString() {
@@ -76,11 +160,25 @@ module.exports = class Data {
 		assert(close <= high, `.close (${close}) should be equal or smaller than .high (${high})`);
 	}
 
+	_requireAttachment() {
+		assert(this.isAttached, 'Data must be attached to a DataSerie');
+	}
+
 	_attachTo(dataSeries, index) {
 		Object.defineProperty(this, 'dataSeries', { writable: true });
 		Object.defineProperty(this, 'index', { writable: true });
 		this.dataSeries = dataSeries;
 		this.index = index;
+	}
+
+	_getCached(key, getter) {
+		let cache = this.__c;
+		if (!cache) {
+			Object.defineProperty(this, '__c', { writable: true });
+			cache = this.__c = {};
+		}
+
+		return cache[key] || (cache[key] = getter());
 	}
 
 	static random() {

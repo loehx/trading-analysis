@@ -62,8 +62,11 @@ module.exports = class DataSeries {
 		return this.__getCached('opens', () => this.data.map(d => d.open));
 	}
 
-	toArray() {
-		return this.data.slice();
+	toArray(start, count) {
+		if (count <= 0) {
+			return [];
+		}
+		return this.data.slice(start, count && (start + count));
 	}
 
 	toJSON(beautify = false) {
@@ -73,22 +76,22 @@ module.exports = class DataSeries {
 	}
 	
 	getSMA(period) {
-		const getter = () => indicators.getSMA(period, this.closes);
+		const getter = () => indicators.getSMAs(period, this.closes);
 		return this.__getCached('sma'+period, getter);
 	}
 
 	getWMA(period) {
-		const getter = () => indicators.getWMA(period, this.closes);
+		const getter = () => indicators.getWMAs(period, this.closes);
 		return this.__getCached('wma'+period, getter);
 	}
 
 	getRSI(period) {
-		const getter = () => indicators.getRSI(period, this.closes);
+		const getter = () => indicators.getRSIs(period, this.closes);
 		return this.__getCached('rsi'+period, getter);
 	}
 
 	getATR(period) {
-		const getter = () => indicators.getATR(period, this.highs, this.lows, this.closes);
+		const getter = () => indicators.getATRs(period, this.highs, this.lows, this.closes);
 		return this.__getCached('atr'+period, getter);
 	}
 

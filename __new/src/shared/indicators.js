@@ -38,7 +38,16 @@ const CANDLE_PATTERNS = {
 
 module.exports = {
 
-	getSMA(period, values) {
+	getSMA(values) {
+		ensure(values, Array);
+		assert(() => values.length > 0);
+		return SMA.calculate({
+			period: values.length,
+			values
+		})[0];
+	},
+
+	getSMAs(period, values) {
 		return [
 			...new Array(period - 1).fill(null),
 			...SMA.calculate({
@@ -48,7 +57,16 @@ module.exports = {
 		];
 	},
 
-	getWMA(period, values) {
+	getWMA(values) {
+		ensure(values, Array);
+		assert(() => values.length > 0);
+		return WMA.calculate({
+			period: values.length,
+			values
+		})[0];
+	},
+
+	getWMAs(period, values) {
 		return [
 			...new Array(period - 1).fill(null),
 			...WMA.calculate({
@@ -58,7 +76,18 @@ module.exports = {
 		];
 	},
 
-	getRSI(period, values) {
+	getRSI(values) {
+		ensure(values, Array);
+		assert(() => values.length > 0);
+		const r = RSI.calculate({
+			period: values.length - 1,
+			values
+		})
+		assert(() => r.length === 1);
+		return r[0];
+	},
+
+	getRSIs(period, values) {
 		return [
 			...new Array(period).fill(null),
 			...RSI.calculate({
@@ -68,7 +97,22 @@ module.exports = {
 		];
 	},
 
-	getATR(period, highs, lows, closes) {
+	getATR(highs, lows, closes) {
+		ensure(highs, Array);
+		ensure(lows, Array);
+		ensure(closes, Array);
+		assert(() => highs.length >= 2);
+		assert(() => highs.length === lows.length);
+		assert(() => lows.length === closes.length);
+		return ATR.calculate({
+			period: highs.length - 1,
+			high: highs,
+			low: lows,
+			close: closes
+		})[0]
+	},
+
+	getATRs(period, highs, lows, closes) {
 		return [
 			...new Array(period).fill(null),
 			...ATR.calculate({
@@ -79,6 +123,35 @@ module.exports = {
 			})
 		];
 	},
+
+
+	getCandlePattern(open, high, close, low) {
+		ensure(open, Array);
+		ensure(high, Array);
+		ensure(close, Array);
+		ensure(low, Array);
+		assert(() => open.length >= 4);
+		assert(() => open.length === high.length);
+		assert(() => high.length === close.length);
+		assert(() => close.length === low.length);
+		const result = {};
+
+		for (let name in CANDLE_PATTERNS) {
+
+			const fn = technicalindicators[name];
+			ensure(fn);
+
+			result[name] = fn({
+				open,
+				high,
+				close,
+				low,
+			}) ? 1 : 0;
+		}
+
+		return result;
+	},
+
 
 	getCandlePatterns(open, high, close, low) {
 		ensure(open, Array);
