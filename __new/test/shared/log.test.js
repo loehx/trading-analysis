@@ -1,4 +1,4 @@
-const { Log } = require('../src/shared/log');
+const { Log } = require("../../src/shared/log");
 
 describe('log', () => {
 

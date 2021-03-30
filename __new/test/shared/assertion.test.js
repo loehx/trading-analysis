@@ -1,4 +1,5 @@
-const { assert, ensure } = require('../src/shared/assertion');
+const { ensure, assert } = require("../../src/shared/assertion");
+
 
 describe('assert', () => {
     test('.assert(() => true)', () => {

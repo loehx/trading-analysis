@@ -1,5 +1,4 @@
-const indicators = require("../src/shared/indicators")
-
+const indicators = require("../../src/shared/indicators");
 
 describe('indicators', () => {
 
