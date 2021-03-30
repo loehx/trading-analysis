@@ -1,5 +1,5 @@
-const Data = require("../src/shared/Data");
-const DataSeries = require("../src/shared/DataSeries");
+const Data = require("../src/Data");
+const DataSeries = require("../src/DataSeries");
 
 test('new Data()', () => {
 	expect(() => new Data()).toThrow(Error);
@@ -70,6 +70,7 @@ test('Data validation -> open', () => {
 })
 
 test('Data validation -> timestamp', () => {
+	jest.spyOn(console, 'warn').mockImplementation(() => {});
 	const data = {
 		...Data.random(),
 		timestamp: 'BAD_DATETIME',

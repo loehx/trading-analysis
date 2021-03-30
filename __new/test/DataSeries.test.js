@@ -1,6 +1,5 @@
-const util = require("../../_old/src/util");
-const Data = require("../src/shared/Data");
-const DataSeries = require("../src/shared/DataSeries");
+const Data = require("../src/Data");
+const DataSeries = require("../src/DataSeries");
 
 test('new DataSeries()', () => {
 	expect(() => new DataSeries()).toThrow(Error);

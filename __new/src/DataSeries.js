@@ -1,8 +1,8 @@
 const moment = require("moment");
 const Data = require("./Data");
-const { ensure, assert } = require("./assertion");
-const util = require("../shared/util");
-const indicators = require("./indicators");
+const { ensure, assert } = require("./shared/assertion");
+const util = require("./shared/util");
+const indicators = require("./shared/indicators");
 
 
 module.exports = class DataSeries {
