@@ -4,10 +4,17 @@ const { ensure, assert } = require('./assertion');
 
 class Log {
 
-    constructor(name) {
+    constructor(name, log) {
         ensure(name, String);
-        this.name = name || 'unnamed';
-        this.eventBus = new EventEmitter();
+        
+        if (log) {
+            this.name = `${log.name}.${name}`;
+            this.eventBus = log.eventBus;
+        }
+        else {
+            this.name = name || 'unnamed';
+            this.eventBus = new EventEmitter();
+        }
     }
 
     getName() {
@@ -19,7 +26,7 @@ class Log {
             assert(...args);
         }
         catch(e) {
-            this.warning(e.message, e.value)
+            this.warn(e.message, e.value)
         }
     }
 
@@ -28,7 +35,7 @@ class Log {
             ensure(...args);
         }
         catch(e) {
-            this.warning(e.message, e.value)
+            this.warn(e.message, e.value)
         }
     }
 
@@ -36,7 +43,7 @@ class Log {
         this._write('write', message, ...args);
     }
 
-    warning(message, ...args) {
+    warn(message, ...args) {
         this._write('warning', message, ...args);
     }
 

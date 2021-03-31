@@ -51,7 +51,7 @@ describe('log', () => {
                 expect(args[0]).toBe(1);
                 resolve();
             })
-            log.warning('Test Message', 1);
+            log.warn('Test Message', 1);
         });
     })
 
@@ -87,6 +87,21 @@ describe('log', () => {
                 resolve();
             })
             log.ensure(1, String);
+        });
+    })
+
+    test('Parent Log', async () => {
+        const parent = new Log('Parent');
+        const log = new Log('TestLog', parent);
+        return new Promise(resolve => {
+            parent.on('write', (message, ...args) => {
+                expect(message).toBe('[Parent.TestLog] Test Message');
+                expect(args[0]).toBe(1);
+                expect(args[1]).toBe(2);
+                expect(args[2]).toBe(3);
+                resolve();
+            })
+            log.write('Test Message', 1, 2, 3);
         });
     })
 })

@@ -1,4 +1,4 @@
-const Data = require("./Data");
+const Data = require("./data/Data");
 const { assert } = require("./shared/assertion");
 const TradeOptions = require("./TradeOptions");
 

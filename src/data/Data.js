@@ -1,7 +1,7 @@
 const moment = require("moment");
-const { ensure, assert } = require("./shared/assertion");
-const indicators = require("./shared/indicators");
-const util = require("./shared/util");
+const { ensure, assert } = require("../shared/assertion");
+const indicators = require("../shared/indicators");
+const util = require("../shared/util");
 
 
 module.exports = class Data {
