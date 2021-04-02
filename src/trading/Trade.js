@@ -1,5 +1,5 @@
-const Data = require("./data/Data");
-const { assert } = require("./shared/assertion");
+const Data = require("../data/Data");
+const { assert } = require("../shared/assertion");
 const TradeOptions = require("./TradeOptions");
 
 module.exports = class Trade {
