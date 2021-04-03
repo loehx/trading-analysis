@@ -1,7 +1,5 @@
-const DataSeries = require("../src/data/DataSeries")
-const Data = require("../src/data/Data")
-const Trade = require("../src/Trade")
-const TradeOptions = require("../src/TradeOptions")
+const { Data, DataSeries, DataFactory } = require('../../src/data');
+const { Trade, TradeOptions } = require('../../src/trading');
 
 describe('Trade', () => {
 	test('new Trade()', () => {

@@ -1,5 +1,4 @@
-const Data = require("../src/data/Data");
-const DataSeries = require("../src/data/DataSeries");
+const { Data, DataSeries } = require('../../src/data');
 
 test('new Data()', () => {
 	expect(() => new Data()).toThrow(Error);

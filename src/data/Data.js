@@ -152,7 +152,7 @@ module.exports = class Data {
 
 	_validate() {
 		const { timestamp, low, high, open, close } = this;
-		assert(moment(timestamp).isValid(), 'timestamp is not valid');
+		assert(moment(timestamp).isValid(), 'timestamp is not valid: ' + timestamp);
 		assert(high >= low, `.high (${high}) should be equal or greater than .low (${low})`);
 		assert(open >= low, `.open (${open}) should be equal or greater than .low (${low})`);
 		assert(close >= low, `.close (${close}) should be equal or greater than .low (${low})`);

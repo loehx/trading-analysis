@@ -59,10 +59,18 @@ class Log {
         message = message || '(empty)';
         message = `[${this.name}] ${message}`
         this.eventBus.emit(type, message, ...args);
+        this.eventBus.emit('all', type.toString() + ': ' + message, ...args);
+    }
+
+    static consoleLog(name) {
+        const log = new Log(name);
+        log.on('write', console.log);
+        log.on('warning', console.warn);
+        log.on('error', console.error);
+        return log;
     }
 }
 
 module.exports = {
-    Log,
-
+    Log
 };
