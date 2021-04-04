@@ -1,31 +1,49 @@
 const path = require('path');
-const keyFileStorage = require("key-file-storage/dist")
+const fs = require("fs")
 
 class Cache {
 	constructor(storageKey, caching = false) {
-		// caching = true: Unlimited cache, anything will be cached on memory, good for small data volumes
-		// caching = false: No cache, read the files from disk every time, good when other applications can modify the files' contents arbitrarily
-		this.storage = keyFileStorage(path.join('./.cache', storageKey), caching);
+		this.basePath = path.join('./.cache', storageKey);
+		this.basePath = path.resolve(this.basePath);
+		fs.mkdirSync(this.basePath, { recursive: true });
+	}
+
+	get length() {
+		let count = 0;
+		return fs.readdirSync(this.basePath, () => count++).length;
 	}
 
 	setItem(key, value) {
-		this.storage[key] = value;
+		const data = JSON.stringify(value, null, 4);
+		fs.writeFileSync(this._filePath(key), data, 'utf8');
 	}
 
 	getItem(key) {
-		return this.storage[key];
+		if (this.hasItem(key)) {
+			return require(this._filePath(key));
+		}
+		return null;
 	}
 
 	hasItem(key) {
-		return key in this.storage;
+		return fs.existsSync(this._filePath(key));
 	}
 
 	clear() {
-		delete this.storage['*'];
+		fs.rmdirSync(this.basePath, { recursive: true });
+		fs.mkdirSync(this.basePath, { recursive: true });
 	}
 
 	removeItem(key) {
-		delete this.storage[key];
+		fs.unlinkSync(this._filePath(key));
+	}
+
+	_filePath(key) {
+		return path.join(this.basePath, this._key(key) + '.json');
+	}
+
+	_key(key) {
+		return key.replace(/[\\/:"*?<>|]+/gi, '-').toLowerCase();
 	}
 }
 
