@@ -1,4 +1,4 @@
-const { assert, ensure } = require("./shared/assertion");
+const { assert, ensure } = require("../shared/assertion");
 
 module.exports = class TradeOptions {
 	constructor(options) {

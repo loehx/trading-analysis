@@ -19,7 +19,7 @@ describe('Trade', () => {
 			Data.create('2000-01-01T01:00:00', 102, 110, 112, 112),
 			Data.create('2000-01-01T02:00:00', 104, 112, 105, 112),
 			Data.create('2000-01-01T03:00:00', 95, 105, 97, 107),
-			Data.create('2000-01-01T03:00:00', 55, 97, 80, 110),
+			Data.create('2000-01-01T04:00:00', 55, 97, 80, 110),
 		])
 		const options = new TradeOptions({
 			takeProfit: .2,
