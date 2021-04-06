@@ -1,22 +1,25 @@
 const tf = require('@tensorflow/tfjs');
+const EventEmitter = require('events');
 const fs = require('fs');
 const path = require('path');
 const config = require("../../config");
-const { assert, ensure } = require('./assertion');
+const { assert, ensure } = require('../shared/assertion');
 
 assert(() => config['ai.directory']);
 
 module.exports = class NeuralNetwork {
 	
-	constructor({ id, optimizer, loss, inputActivation, outputActivation, hiddenLayer }) {
+	constructor({ id, optimizer, loss, inputActivation, inputUnits, outputActivation, hiddenLayers }) {
 		ensure(id, String);
 		this.id = id.replace(/[\\/:"*?<>|]+/gi, '-').toLowerCase();
 		this.filePath = path.resolve(path.join(config['ai.directory'], this.id));
 		this.optimizer = optimizer || 'adam';
-		this.loss = loss || 'meanSquaedError';
-		this.hiddenLayer = hiddenLayer || [];
+		this.loss = loss || 'meanSquaredError';
+		this.hiddenLayers = hiddenLayers || [];
+		this.inputUnits = inputUnits;
 		this.inputActivation = inputActivation || 'tanh';
 		this.outputActivation = outputActivation || 'softmax';
+		this.eventListener = new EventEmitter();
 	}
 
 	async _getModel(inputCount, outputCount) {
@@ -28,13 +31,13 @@ module.exports = class NeuralNetwork {
 
 		// first layer
 		m.add(tf.layers.dense({
-			units: inputCount, 
+			units: this.inputUnits || inputCount, 
 			activation: this.inputActivation,
 			inputShape: [inputCount],
 		}));
 
 		// middle layer
-		for(let layer of this.hiddenLayer) {
+		for(let layer of this.hiddenLayers) {
 			if ('dropout' in layer) {
 				m.add(tf.layers.dropout(layer.dropout));
 			}
@@ -46,22 +49,21 @@ module.exports = class NeuralNetwork {
 		// output layer
 		m.add(tf.layers.dense({ 
 			activation: this.outputActivation,
-			...(this.layers[this.layers.length - 1] || {}),
 			units: outputCount, 
 		}));
 
 		m.compile({ 
 			loss: this.loss, 
-			optimizer: this.optimizer 
+			optimizer: this.optimizer,
+			metrics: ['accuracy']
 		});
+
+		m.summary();
+
+		return m;
 	}
 
-	onEpochEnd() {
-		
-	}
-
-	async train(milliseconds, data) {
-		assert(() => milliseconds > 0);
+	async* train({ data, epochs = 10, learningRate }) {
 		assert(() => data.length > 0);
 
 		const inputCount = data[0].x.length;
@@ -69,24 +71,50 @@ module.exports = class NeuralNetwork {
 		assert(() => inputCount > 0);
 		assert(() => outputCount > 0);
 
-		const model = this._getModel(inputCount, outputCount);
-		const start = new Date();
-
+		const model = await this._getModel(inputCount, outputCount);
 		const trainingData = tf.tensor2d(data.map(d => d.x));
 		const targetData = tf.tensor2d(data.map(d => d.y));
 		
-		while(new Date() - start <= milliseconds) {
-			var h = await model.fit(trainingData, targetData, { epochs: 10 });
+		let start = new Date();
+		let stop = false;
+
+		model.summary();
+
+		if (learningRate) {
+			model.optimizer.learningRate = learningRate
 		}
+
+		let lastHistory = null;
+		let counter = 0;
+		while(!stop) {
+			const { history } = await model.fit(trainingData, targetData, { epochs, verbose: 0 });
+			const accuracy = Math.max(...(history.val_acc || history.acc));
+			const loss = Math.max(...history.loss);
+			counter++;
+			yield lastHistory = {
+				epochs: counter * epochs,
+				accuracy,
+				loss,
+				lossIncrease: lastHistory ? (loss / lastHistory.loss - 1) : 0,  
+				accuracyIncrease: lastHistory ? (accuracy / lastHistory.accuracy - 1) : 0,  
+				seconds: (new Date() - start) / 1000,
+				stop: () => stop = true,
+				setLearningRate: (lr) => model.optimizer.learningRate = lr
+			}
+		}
+		return null;
 	}
 
-	async predict(xs) {
-		x = tf.tensor2d(x);
-		return this.model.predict(x).dataSync();
+	predictBulk(xs) {
+		ensure(xs, Array);
+		ensure(xs[0], Array);
+		xs = tf.tensor2d(xs);
+		return this.model.predict(xs).dataSync();
 	}
 
-	async predictSingle(x) {
-		return this.predict([x])[0];
+	predict(x) {
+		const prediction = this.predictBulk([x]);
+		return prediction[0];
 	}
 	
 	async save(id, model) {

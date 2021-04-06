@@ -6,14 +6,20 @@ const model = tf.sequential();
 model.add(tf.layers.dense({units: 10, activation: 'sigmoid',inputShape: [2]}));
 model.add(tf.layers.dense({units: 1, activation: 'sigmoid',inputShape: [10]}));
 
-model.compile({loss: 'meanSquaredError', optimizer: 'rmsprop'});
+model.compile({
+  loss: 'meanSquaredError', 
+  optimizer: 'rmsprop', 
+  metrics: ['accuracy']
+});
+
+model.optimizer.learningRate = 0.01;
 
 const training_data = tf.tensor2d([[0,0],[0,1],[1,0],[1,1]]);
 const target_data = tf.tensor2d([[0],[1],[1],[0]]);
 
 for (let i = 1; i < 100 ; ++i) {
- var h = await model.fit(training_data, target_data, {epochs: 30});
-   console.log("Loss after Epoch " + i + " : " + h.history.loss[0]);
+ var h = await model.fit(training_data, target_data, {epochs: 50});
+   console.log("Loss after Epoch " + i + " : " + h.history.loss[0], ' acc:', h.history.acc[0]);
 }
 
  model.predict(training_data).print();

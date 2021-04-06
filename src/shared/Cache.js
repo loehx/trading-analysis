@@ -1,10 +1,11 @@
 const path = require('path');
 const fs = require("fs");
 const config = require("../../config");
-
+const { assert } = require('./assertion');
 class Cache {
 	constructor(storageKey, caching = false) {
 		const directory = config['cache.directory'];
+		assert(() => config['cache.directory']);
 		this.basePath = path.join(directory, storageKey);
 		this.basePath = path.resolve(this.basePath);
 		fs.mkdirSync(this.basePath, { recursive: true });
@@ -32,12 +33,18 @@ class Cache {
 	}
 
 	clear() {
-		fs.rmdirSync(this.basePath, { recursive: true });
-		fs.mkdirSync(this.basePath, { recursive: true });
+		const files = fs.readdirSync(this.basePath);
+		for(const file of files) {
+			fs.unlinkSync(path.join(this.basePath, file));
+		}
+		// fs.rmdirSync(this.basePath, { recursive: true });
+		// fs.mkdirSync(this.basePath, { recursive: true });
 	}
 
 	removeItem(key) {
-		fs.unlinkSync(this._filePath(key));
+		if (this.hasItem(key)) {
+			fs.unlinkSync(this._filePath(key));
+		}
 	}
 
 	_filePath(key) {

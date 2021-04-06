@@ -26,24 +26,24 @@ describe('DataFactory', () => {
 	// })
 
 	test('new DataFactory()', async () => {
-		const log = Log.consoleLog('Test');
-		const cache = new Cache('test');
-		//cache.clear();
-		const factory = new DataFactory(log, cache);
+		// const log = Log.consoleLog('Test');
+		// const cache = new Cache('test');
+		// //cache.clear();
+		// const factory = new DataFactory(log, cache);
 
-		const result = await factory.getHourly({
-			symbol: 'NASDAQ',
-			from: '2021-01-04T00:00:00',
-			to: '2021-01-05T00:00:00',
-		})
+		// const result = await factory.getHourly({
+		// 	symbol: 'NASDAQ',
+		// 	from: '2021-01-04T00:00:00',
+		// 	to: '2021-01-05T00:00:00',
+		// })
 
-		expect(result != null).toBe(true);
-		expect(result.length).toBe(7);
+		// expect(result != null).toBe(true);
+		// expect(result.length).toBe(7);
 		
-		expect(result.high).toBe(12947.0918);
-		expect(result.low).toBe(12537.42188);
-		expect(result.close).toBe(12697.70605);
-		expect(result.open).toBe(12947.0918);
+		// expect(result.high).toBe(12947.0918);
+		// expect(result.low).toBe(12537.42188);
+		// expect(result.close).toBe(12697.70605);
+		// expect(result.open).toBe(12947.0918);
 	})
 	
 
