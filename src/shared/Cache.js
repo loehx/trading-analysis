@@ -1,9 +1,11 @@
 const path = require('path');
-const fs = require("fs")
+const fs = require("fs");
+const config = require("../../config");
 
 class Cache {
 	constructor(storageKey, caching = false) {
-		this.basePath = path.join('./.cache', storageKey);
+		const directory = config['cache.directory'];
+		this.basePath = path.join(directory, storageKey);
 		this.basePath = path.resolve(this.basePath);
 		fs.mkdirSync(this.basePath, { recursive: true });
 	}
