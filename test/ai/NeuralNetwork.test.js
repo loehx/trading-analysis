@@ -1,17 +1,7 @@
 
-const tf = require('@tensorflow/tfjs');
+const tf = require('@tensorflow/tfjs-node');
+const fs = require('fs');
 const NeuralNetwork = require('../../src/ai/NeuralNetwork');
-
-async function getExampleModel() {
-	const model = tf.sequential();
-	model.add(tf.layers.dense({units: 10, activation: 'tanh',inputShape: [2]}));
-	model.add(tf.layers.dense({units: 1, activation: 'relu',inputShape: [10]}));
-	model.compile({loss: 'meanSquaredError', optimizer: 'adam'});
-	const training_data = tf.tensor2d([[0,0],[0,1],[1,0],[1,1]]);
-	const target_data = tf.tensor2d([[0],[1],[1],[0]]);
-	await model.fit(training_data, target_data, {epochs: 100});
-	return model;
-}
 
 test('XOR (without NeuralNetwork)', async () => {
 	const model = tf.sequential();
@@ -21,12 +11,12 @@ test('XOR (without NeuralNetwork)', async () => {
 	model.optimizer.learningRate = 0.01;
 	const training_data = tf.tensor2d([[0,0],[0,1],[1,0],[1,1]]);
 	const target_data = tf.tensor2d([[0],[1],[1],[0]]);
-	const h = await model.fit(training_data, target_data, {epochs: 200});
+	const h = await model.fit(training_data, target_data, {epochs: 200, verbose: 0});
 	expect(h.history.acc[h.history.acc.length - 1]).toBe(1);
 });
 
-test('XOR', async () => {
-	const nn = new NeuralNetwork({
+function getXORNeuralNetwork() {
+	return new NeuralNetwork({
 		id: 'Test: XOR',
 		inputActivation: 'sigmoid',
 		inputUnits: 10,
@@ -34,7 +24,10 @@ test('XOR', async () => {
 		optimizer: 'rmsprop',
 		loss: 'meanSquaredError',
 	})
+}
 
+test('XOR', async () => {
+	const nn = getXORNeuralNetwork();
 	const training = nn.train({
 		epochs: 50,
 		learningRate: 0.1,
@@ -48,7 +41,6 @@ test('XOR', async () => {
 	
 	for await (const state of training) {
 		expect(state.accuracy).toBeGreaterThan(0.49);
-		console.log('aaa', state);
 
 		if (state.epochs >= 200) {
 			expect(nn.predict([0,0])).toBeLessThan(.5);

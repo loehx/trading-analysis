@@ -45,4 +45,8 @@ const util = module.exports = {
     memoize(fn) {
         return _.memoize(fn, (...a) => new Array(a).join('_'));
     },
+
+    round(n, precision) {
+        return _.round(n, precision);
+    }
 };
