@@ -37,9 +37,22 @@ const util = module.exports = {
         return result;
     },
 
-    avg(...args) {
+    avg(args) {
         ensure(args);
-        return args.reduce((a, x) => a + (x / args.length), 0);
+        let avg = 0;
+        for (let i = 0; i < args.length; i++) {
+            avg += args[i]/args.length;
+        }
+        return this.round(avg, 10);
+    },
+
+    avgBy(args, fn) {
+        ensure(args);
+        let avg = 0;
+        for (let i = 0; i < args.length; i++) {
+            avg += fn(args[i])/args.length;
+        }
+        return this.round(avg, 10);
     },
 
     memoize(fn) {

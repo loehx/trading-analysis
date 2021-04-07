@@ -6,6 +6,7 @@ const Cache = require("../shared/cache");
 const moment = require('moment');
 const Data = require("./Data");
 const DataSeries = require("./DataSeries");
+const BacktestMarket = require("./sources/BacktestMarket");
 module.exports = class DataFactory {
 
 	constructor(log, cache) {
@@ -14,40 +15,66 @@ module.exports = class DataFactory {
 		this.cache = cache || new Cache('datafactory');
 	}
 
-	async getHourly({ symbol, from, to }) {
-		ensure(symbol, String);
-		return await this._fetch({
-			symbol,
-			interval: '1h',
-			from,
-			to
-		})
+	async getNASDAQHourly(options) {
+		return await this._fetchTwelveData({
+			...options,
+			symbol: 'NDX',
+			interval: '1h'
+		});
 	}
 
-	async _fetch(options) {
+	async getHistoricalNASDAQHourly() {
+		return DataSeries.fromRawData(await BacktestMarket.getData('NASDAQ_HOURLY'));
+	}
+
+	async getEURUSDHourly(options) {
+		return await this._fetchTwelveData({
+			...options,
+			symbol: 'EUR/USD',
+			interval: '1h'
+		});
+	}
+
+	async getHistoricalEURUSDHourly() {
+		return DataSeries.fromRawData(await BacktestMarket.getData('EURUSD_HOURLY'));
+	}
+
+	async _fetchTwelveData(options) {
 		ensure(options, Object);
-		this.log.write(`fetch ${options.symbol} ${options.interval} ...`, options);
+		this.log.write(`fetch data from TwelveData: ${options.symbol} ${options.interval} ...`, options);
 
-		const cacheKey = Object.values(options).map(v => v ? v.toString() : '').join('-');
-		const cached = this.cache.getItem(cacheKey);
-		if (cached) {
-			this.log.write(`... found in cache.`);
-			return new DataSeries(cached.map(r => new Data(r)));;
-		}
-
-		const result =  await this.twelveData.fetch({
-			...options
+		const datasets = await this._getCached(options, async () => {
+			return await this.twelveData.fetch({
+				...options
+			})
 		})
 
-		if (result === null) {
+		if (datasets === null) {
 			this.log.write(`... fetch failed.`);
 			return null;
 		}
-
-		this.log.write(`... fetched ${result.length} values successfully`);
-		const r = new DataSeries(result.map(r => new Data(r)));
-		this.cache.setItem(cacheKey, result);
-		return r;
+		else {
+			this.log.write(`... fetched ${datasets.length} datasets successfully`);
+			return DataSeries.fromRawData(datasets);
+		}
 	}
 
+	async _getCached(key, fn) {
+		if (typeof key === 'object') {
+			key = Object.values(key)
+				.filter(v => v)
+				.map(v => v.toString())
+				.join('-');
+		}
+
+		const cached = this.cache.getItem(key);
+		if (cached) {
+			this.log.write('Found data in cache: ' + key);
+			return cached;
+		}
+
+		const data = await fn();
+		this.cache.setItem(key, data);
+		return data;
+	}
 }

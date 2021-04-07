@@ -33,10 +33,10 @@ module.exports = class DataSeries {
 	get high() { return Math.max(...this.data.map(d => d.high)); };
 	get low() { return Math.min(...this.data.map(d => d.low)); };
 
-	get avgOpen() { return util.avg(...this.data.map(d => d.open)); }
-	get avgClose() { return util.avg(...this.data.map(d => d.close)); }
-	get avgHigh() { return util.avg(...this.data.map(d => d.high)); }
-	get avgLow() { return util.avg(...this.data.map(d => d.low)); }
+	get avgOpen() { return util.avgBy(this.data, d => d.open); }
+	get avgClose() { return util.avgBy(this.data, d => d.close); }
+	get avgHigh() { return util.avgBy(this.data, d => d.high); }
+	get avgLow() { return util.avgBy(this.data, d => d.low); }
 	
 	get progress() { return this.close / this.open - 1 }
 	
@@ -134,5 +134,9 @@ module.exports = class DataSeries {
 		ensure(obj, Object);
 		ensure(obj.data, Array);
 		return new DataSeries(obj.data.map(d => new Data(d)));
+	}
+
+	static fromRawData(data) {
+		return new DataSeries(data.map(r => new Data(r)));
 	}
 }

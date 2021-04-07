@@ -29,9 +29,10 @@ describe('util', () => {
         expect(util.range(start, end, step)).toStrictEqual(expected);
     });
 
-    test.each([
-        [0, 1, 2, 1],
-    ])('.avg(%p, %p, %p)', (a,b,c, expected) => {
-        expect(util.avg(a,b,c)).toStrictEqual(expected);
-    });
+    test('.avg()', () => {
+        const array = util.range(0, 80 * 1000, 1);
+        const average = util.avg(array);
+
+        expect(average).toBeCloseTo(40000);
+    }) 
 })
