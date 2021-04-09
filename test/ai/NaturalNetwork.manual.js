@@ -1,5 +1,5 @@
 
-const tf = require('@tensorflow/tfjs-node');
+const tf = require('@tensorflow/tfjs');
 const fs = require('fs');
 const NeuralNetwork = require('../../src/ai/NeuralNetwork');
 const { Log } = require('../../src/shared/log');

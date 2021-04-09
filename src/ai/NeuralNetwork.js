@@ -1,4 +1,4 @@
-const tf = require('@tensorflow/tfjs-node');
+const tf = require('@tensorflow/tfjs');
 const { assert, ensure } = require('../shared/assertion');
 const { Log } = require('../shared/log');
 const { round } = require('../shared/util');

@@ -30,8 +30,8 @@ module.exports = class DataSeries {
 
 	get open() { return this.first.open };
 	get close() { return this.last.close };
-	get high() { return Math.max(...this.data.map(d => d.high)); };
-	get low() { return Math.min(...this.data.map(d => d.low)); };
+	get high() { return util.maxBy(this.data, d => d.high); };
+	get low() { return util.minBy(this.data, d => d.low); };
 
 	get avgOpen() { return util.avgBy(this.data, d => d.open); }
 	get avgClose() { return util.avgBy(this.data, d => d.close); }

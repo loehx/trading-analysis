@@ -55,6 +55,30 @@ const util = module.exports = {
         return this.round(avg, 10);
     },
 
+    minBy(args, fn) {
+        ensure(args, Array);
+        let min = Infinity;
+        for (let i = 0; i < args.length; i++) {
+            const n = fn(args[i]);
+            if (n < min) {
+                min = n;
+            }
+        }
+        return min;
+    },
+
+    maxBy(args, fn) {
+        ensure(args, Array);
+        let max = -Infinity;
+        for (let i = 0; i < args.length; i++) {
+            const n = fn(args[i]);
+            if (n > max) {
+                max = n;
+            }
+        }
+        return max;
+    },
+
     memoize(fn) {
         return _.memoize(fn, (...a) => new Array(a).join('_'));
     },
