@@ -10,13 +10,8 @@ module.exports = class DataSeries {
 	constructor(data) {
 		ensure(data, Array);
 		assert(() => data.length > 0);
-		this.data = [...data];
-		this.data.sort((a, b) => a.timestamp - b.timestamp);
-		this.data.forEach((d, i) => {
-			assert(() => d instanceof Data);
-			d._attachTo(this, i)
-		});
-		Object.freeze(this.data);
+		this.data = [];
+		this.addData(data);
 	}
 
 	get(index) { return this.data[index]; }
@@ -60,6 +55,18 @@ module.exports = class DataSeries {
 
 	get opens() {
 		return this.__getCached('opens', () => this.data.map(d => d.open));
+	}
+
+	addData(data) {
+		this.data = this.data.concat(data);
+		this.data.sort((a, b) => a.timestamp - b.timestamp);
+		this.data.forEach((d, i) => {
+			assert(() => d instanceof Data);
+			d._attachTo(this, i)
+		});
+		if (this.__c) {
+			this.__c = null;
+		}
 	}
 
 	toArray(start, count) {

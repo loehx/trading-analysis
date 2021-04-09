@@ -24,6 +24,26 @@ test('new DataSeries(BAD_DATA)', () => {
 	expect(() => new DataSeries(data)).toThrow('Assertion Failed: () => d instanceof Data')
 })
 
+test('.addData', () => {
+	const series = new DataSeries([
+		Data.create('2000-01-01T00:00:00', 100, 100, 105, 106),
+		Data.create('2000-01-01T01:00:00', 102, 105, 110, 112),
+		/* added later */
+		Data.create('2000-01-01T04:00:00', 95, 105, 97, 107),
+		Data.create('2000-01-01T05:00:00', 55, 97, 80, 110),
+	])
+	
+	expect(series.length).toBe(4);
+
+	series.addData([		
+		Data.create('2000-01-01T02:00:00', 102, 110, 112, 112),
+		Data.create('2000-01-01T03:00:00', 104, 112, 105, 112),
+	])
+
+	expect(series.length).toBe(6);
+	expect(series.last.getSMA(6)).toBe(101.5);
+})
+
 test('.toShuffledArray', () => {
 	const data = [
 		Data.random(),

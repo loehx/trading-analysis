@@ -169,6 +169,9 @@ module.exports = class Data {
 		Object.defineProperty(this, 'index', { writable: true });
 		this.dataSeries = dataSeries;
 		this.index = index;
+		if (this.__c) {
+			this.__c = null;
+		}
 	}
 
 	_getCached(key, getter) {
