@@ -85,5 +85,13 @@ const util = module.exports = {
 
     round(n, precision) {
         return _.round(n, precision);
-    }
+    },
+
+    timeout(milliseconds) {
+        return new Promise(function(resolve) {
+            setTimeout(function() {
+                resolve();
+            }, milliseconds);
+        });
+    },
 };

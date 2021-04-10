@@ -61,6 +61,7 @@ module.exports = class DataSeries {
 		this.data = this.data.concat(data);
 		this.data.sort((a, b) => a.timestamp - b.timestamp);
 		this.data.forEach((d, i) => {
+			ensure(d);
 			assert(() => d instanceof Data);
 			d._attachTo(this, i)
 		});
@@ -105,6 +106,11 @@ module.exports = class DataSeries {
 	getCandlePatterns() {
 		const getter = () => indicators.getCandlePatterns(this.opens, this.highs, this.closes, this.lows);
 		return this.__getCached('cap', getter);
+	}
+
+	toString() {
+		const { first, last, length } = this;
+		return `${length} datasets between ${moment(first.timestamp).format()} - ${moment(last.timestamp).format()}`
 	}
 
 	__getCached(key, getter) {

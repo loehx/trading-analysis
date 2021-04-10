@@ -1,5 +1,5 @@
 const moment = require('moment');
-const { Data, DataSeries, DataFactory } = require('../../src/data');
+const { Data, DataSeries, DataFactory, Symbols } = require('../../src/data');
 const { Log } = require('../../src/shared/log');
 const Cache = require('../../src/shared/Cache');
 
@@ -11,7 +11,7 @@ describe('DataFactory', () => {
 	// 	cache.clear();
 	// 	const factory = new DataFactory(log, cache);
 
-	// 	const result = await factory.getHourly({
+	// 	const result = await factory.getDataSeriesHourly({
 	// 		symbol: 'EURUSD',
 	// 		from: '2021-01-01T00:00:00',
 	// 		to: '2021-01-02T00:00:00',
@@ -25,12 +25,12 @@ describe('DataFactory', () => {
 	// 	expect(result.open).toBe(1.21335);
 	// })
 
-	test('.getNASDAQHourly()', async () => {
+	test('NASDAQ_HOURLY', async () => {
 		const log = Log.consoleLog('Test');
 		const cache = new Cache('test');
 		const factory = new DataFactory(log, cache);
 
-		const result = await factory.getNASDAQHourly({
+		const result = await factory.getDataSeries(Symbols.NASDAQ_HOURLY, {
 			from: '2021-01-04T00:00:00',
 			to: '2021-01-05T00:00:00',
 		})
@@ -44,18 +44,28 @@ describe('DataFactory', () => {
 		expect(result.open).toBe(12947.0918);
 	})
 	
-	test('.getHistoricalNASDAQHourly', async () => {
-		const factory = new DataFactory();
-		const result = await factory.getHistoricalNASDAQHourly();
+	test('NASDAQ_HOURLY_HISTORICAL', async () => {
+		const factory = new DataFactory(Log.consoleLog('Test'));
+		const result = await factory.getDataSeries(Symbols.NASDAQ_HOURLY_HISTORICAL);
 
 		expect(result != null).toBe(true);
 		expect(result.length).toBe(84079);
 		expect(result.avgClose).toBeCloseTo(4325.8540);
 	})
 
-	test('.getEURUSDHourly', async () => {
+	test('NASDAQ_HOURLY_HISTORICAL (+from-filter)', async () => {
 		const factory = new DataFactory();
-		const result = await factory.getEURUSDHourly({
+		const result = await factory.getDataSeries(Symbols.NASDAQ_HOURLY_HISTORICAL, {
+			from: '2021-01-01T00:00:00'
+		});
+
+		expect(result.length).toBe(1218);
+		expect(result.avgClose).toBeCloseTo(13165.5334);
+	})
+
+	test('EURUSD_HOURLY', async () => {
+		const factory = new DataFactory();
+		const result = await factory.getDataSeries(Symbols.EURUSD_HOURLY, {
 			from: '2021-01-04T00:00:00',
 			to: '2021-01-05T00:00:00',
 		})
@@ -65,9 +75,9 @@ describe('DataFactory', () => {
 		expect(result.avgClose).toBeCloseTo(1.22675);
 	})
 
-	test('.getHistoricalEURUSDHourly', async () => {
+	test('EURUSD_HOURLY_HISTORICAL', async () => {
 		const factory = new DataFactory();
-		const result = await factory.getHistoricalEURUSDHourly();
+		const result = await factory.getDataSeries(Symbols.EURUSD_HOURLY_HISTORICAL);
 
 		expect(result != null).toBe(true);
 		expect(result.length).toBe(117308);

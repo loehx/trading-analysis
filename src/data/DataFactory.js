@@ -1,42 +1,47 @@
 const TwelveData = require("./sources/twelveData")
 const config = require("../../config");
-const { ensure } = require("../shared/assertion");
+const { ensure, assert } = require("../shared/assertion");
 const { Log } = require("../shared/log");
 const Cache = require("../shared/cache");
 const moment = require('moment');
 const Data = require("./Data");
 const DataSeries = require("./DataSeries");
 const BacktestMarket = require("./sources/BacktestMarket");
+
 module.exports = class DataFactory {
 
 	constructor(log, cache) {
 		this.log = new Log('DataFactory', log);
 		this.twelveData = new TwelveData(config['twelveData.apiKey'], this.log);
 		this.cache = cache || new Cache('datafactory');
+		this.backtestMarket = BacktestMarket;
 	}
 
-	async getNASDAQHourly(options) {
-		return await this._fetchTwelveData({
-			...options,
-			symbol: 'NDX',
-			interval: '1h'
-		});
+	async getData(symbol, options) {
+		assert(() => symbol.getter);
+		return (await symbol.getter(this, options)).map(d => new Data(d));
 	}
 
-	async getHistoricalNASDAQHourly() {
-		return DataSeries.fromRawData(await BacktestMarket.getData('NASDAQ_HOURLY'));
+	async getDataSeries(symbol, options) {
+		assert(() => symbol.getter);
+		const data = await symbol.getter(this, options);
+		const dataSeries = DataSeries.fromRawData(data);
+		return dataSeries;
 	}
 
-	async getEURUSDHourly(options) {
-		return await this._fetchTwelveData({
-			...options,
-			symbol: 'EUR/USD',
-			interval: '1h'
-		});
-	}
+	async _fetchBacktestMarketData(symbol, options = {}) {
 
-	async getHistoricalEURUSDHourly() {
-		return DataSeries.fromRawData(await BacktestMarket.getData('EURUSD_HOURLY'));
+		this.log.startTimer(`_fetchBacktestMarketData(${symbol})`);
+		let datasets = await BacktestMarket.getData(symbol);
+
+		if (options.from) {
+			const from = moment.utc(options.from);
+			datasets = datasets.filter(d => from.isBefore(d.timestamp));
+		};
+		
+		this.log.stopTimer();
+
+		return datasets;
 	}
 
 	async _fetchTwelveData(options) {
@@ -55,7 +60,7 @@ module.exports = class DataFactory {
 		}
 		else {
 			this.log.write(`... fetched ${datasets.length} datasets successfully`);
-			return DataSeries.fromRawData(datasets);
+			return datasets;
 		}
 	}
 

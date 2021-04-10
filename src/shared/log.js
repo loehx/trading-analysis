@@ -21,6 +21,21 @@ class Log {
         return this.name;    
     }
 
+    startTimer(name) {
+        this.timers = this.timers || [];
+        this.timers.push({
+            start: new Date(),
+            name: name
+        })
+    }
+
+    stopTimer() {
+        const timer = this.timers.pop();
+        assert(timer, 'No timer found to stop.');
+        const ms = new Date() - timer.start;
+        this.write(`"${timer.name}" took ${ms/1000} seconds`);
+    }
+
     assert(...args) {
         try {
             assert(...args);
