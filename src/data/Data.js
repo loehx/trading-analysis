@@ -60,7 +60,7 @@ module.exports = class Data {
 	}
 
 	getPrev(n, includeSelf = false, padding = false) {
-		return this._getCached(`${n}${includeSelf}${padding}`, () => {
+		return this._getCached(`p${n}${includeSelf}${padding}`, () => {
 			this._requireAttachment();
 			const s = includeSelf ? 1 : 0;
 			const start = this.index - n + s;
@@ -72,12 +72,28 @@ module.exports = class Data {
 		})
 	}
 
+	getNext(n, includeSelf = false, padding = false) {
+		return this._getCached(`n${n}${includeSelf}${padding}`, () => {
+			this._requireAttachment();
+			const s = includeSelf ? 1 : 0;
+			const start = this.index + s;
+			const result = this.dataSeries.toArray(start, start + n);
+			if (padding) {
+				return [ ...result, ...new Array(n - this.index).fill(null)];
+			}
+			return result;
+		})
+	}
+
 	getSMA(period) {
 		const prev = this.getPrev(period, true);
 		return indicators.getSMA(prev.map(d => d.close));
 	}
 
 	getRSMA(period) {
+		if (!this.prev) {
+			return 0
+		}
 		const current = this.getSMA(period);
 		const prev = this.prev.getSMA(period);
 		return current / prev - 1;
@@ -89,17 +105,29 @@ module.exports = class Data {
 	}
 
 	getRWMA(period) {
+		if (!this.prev) {
+			return 0
+		}
 		const current = this.getWMA(period);
 		const prev = this.prev.getWMA(period);
 		return current / prev - 1;
 	}
 
 	getRSI(period) {
+		if (period <= 1) {
+			return 0;
+		}
 		const prev = this.getPrev(period + 1, true);
+		if (prev.length <= 1) {
+			return 0;
+		}
 		return indicators.getRSI(prev.map(d => d.close));
 	}
 
 	getRRSI(period) {
+		if (!this.prev) {
+			return 0
+		}
 		const current = this.getRSI(period);
 		const prev = this.prev.getRSI(period);
 		return current / prev - 1;
@@ -107,6 +135,9 @@ module.exports = class Data {
 
 	getATR(period) {
 		const prev = this.getPrev(period + 1, true);
+		if (prev.length <= 1) {
+			return 0;
+		}
 		return indicators.getATR(
 			prev.map(d => d.high),
 			prev.map(d => d.low),
@@ -115,6 +146,9 @@ module.exports = class Data {
 	}
 
 	getRATR(period) {
+		if (!this.prev) {
+			return 0
+		}
 		const current = this.getATR(period);
 		const prev = this.prev.getATR(period);
 		return current / prev - 1;

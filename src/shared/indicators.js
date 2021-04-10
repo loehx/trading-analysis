@@ -78,7 +78,7 @@ module.exports = {
 
 	getRSI(values) {
 		ensure(values, Array);
-		assert(() => values.length > 0);
+		assert(() => values.length > 1);
 		const r = RSI.calculate({
 			period: values.length - 1,
 			values

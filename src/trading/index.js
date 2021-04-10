@@ -1,4 +1,4 @@
 module.exports = {
 	Trade: require('./Trade'),
-	TradeOptions: require('./TradeOptions'),
+	TradeOptions: require('./TradeOptions')
 };

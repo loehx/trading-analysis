@@ -32,6 +32,26 @@ class Cache {
 		return fs.existsSync(this._filePath(key));
 	}
 
+	getCached(key, getter) {
+		const cached = this.getItem(key);
+		if (cached) {
+			return cached;
+		}
+		const item = getter();
+		this.setItem(key, item);
+		return item;
+	}
+
+	async getCachedAsync(key, getter) {
+		const cached = this.getItem(key);
+		if (cached) {
+			return cached;
+		}
+		const item = await getter();
+		this.setItem(key, item);
+		return item;
+	}
+
 	clear() {
 		const files = fs.readdirSync(this.basePath);
 		for(const file of files) {

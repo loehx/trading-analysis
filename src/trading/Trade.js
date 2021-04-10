@@ -1,5 +1,6 @@
 const Data = require("../data/Data");
 const { assert } = require("../shared/assertion");
+const { round } = require("../shared/util");
 const TradeOptions = require("./TradeOptions");
 
 module.exports = class Trade {
@@ -30,10 +31,10 @@ module.exports = class Trade {
 	get isClosed() { return !!this.closedAt; }
 
 	get profit() {
-		return this.profitability * this.amount;
+		return round(this.profitability * this.amount, 6);
 	}
 	get profitability() { 
-		return this.currentPrice / this.startPrice - 1; 
+		return round(this.currentPrice / this.startPrice - 1, 6); 
 	}
 
 	setTakeProfit(takeProfit) {
@@ -69,8 +70,7 @@ module.exports = class Trade {
 		if (data.low <= stopLossPrice) {
 			this.closeAt(stopLossPrice);
 		}
-
-		if (data.high >= takeProfitPrice) {
+		else if (data.high >= takeProfitPrice) {
 			this.closeAt(takeProfitPrice);
 		}
 
@@ -78,10 +78,15 @@ module.exports = class Trade {
 		this.maxDrawup = Math.max(0, this.profit, this.maxDrawup || 0);
 	}
 
-	closeAt(price) {
-		assert(() => price >= this.current.low);
-		assert(() => price <= this.current.high);
+	makeFutureAware() {
+		while(this.isOpen && this.current.next) {
+			this.update(this.current.next);
+		}
+	}
 
+	closeAt(price) {
+		// assert(price >= this.current.low, price + ' >= ' + this.current.low);
+		// assert(price <= this.current.high, price + ' <= ' + this.current.high);
 		this.currentPrice = price;
 		this.closedAt = this.current;
 	}

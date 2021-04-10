@@ -69,6 +69,7 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 			optimizer: this.optimizer,
 			metrics: ['accuracy']
 		});
+		this.model.summary();
 	}
 
 	async trainOnce(options) {
