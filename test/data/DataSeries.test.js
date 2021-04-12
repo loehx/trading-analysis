@@ -147,3 +147,17 @@ test('.toJSON()', () => {
 	const parsed = DataSeries.parseJSON(json);
 	expect(series.get(0).toString()).toBe(parsed.get(0).toString());
 })
+
+
+test('.subscribe()', () => {
+	const series = DataSeries.mock(2, 1, 'hour');
+	const should = Data.random();
+
+	return new Promise(resolve => {
+		series.subscribe((data) => {
+			expect(data[0]).toStrictEqual(should);
+			resolve();
+		})
+		series.addData(should);
+	});
+})

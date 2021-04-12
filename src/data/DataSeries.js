@@ -3,7 +3,7 @@ const Data = require("./Data");
 const { ensure, assert } = require("../shared/assertion");
 const util = require("../shared/util");
 const indicators = require("../shared/indicators");
-
+const EventEmitter = require('events');
 
 module.exports = class DataSeries {
 
@@ -58,6 +58,9 @@ module.exports = class DataSeries {
 	}
 
 	addData(data) {
+		if (data instanceof Data) {
+			data = [data];
+		}
 		this.data = this.data.concat(data);
 		this.data.sort((a, b) => a.timestamp - b.timestamp);
 		this.data.forEach((d, i) => {
@@ -68,7 +71,23 @@ module.exports = class DataSeries {
 		if (this.__c) {
 			this.__c = null;
 		}
+		if (this.eventBus) {
+			this.eventBus.emit('newData', data);
+		}
 	}
+
+	subscribe(fn) {
+		const bus = this.eventBus || (this.eventBus = new EventEmitter());
+		bus.on('newData', fn);
+	}
+
+	unsubscribe(fn) {
+		if (!this.eventBus) {
+			return false;
+		}
+		bus.off('newData', fn);
+	}
+
 
 	toArray(start, count) {
 		if (count <= 0) {

@@ -8,6 +8,7 @@ module.exports = class Trade {
 	constructor(data, options) {
 		assert(() => options instanceof TradeOptions);
 		assert(() => data instanceof Data);
+		assert(() => data.isAttached);
 		const {
 			takeProfit,
 			stopLoss,
@@ -21,8 +22,14 @@ module.exports = class Trade {
 		this.amount = amount;
 		this.openedAt = data;
 
+		data.dataSeries.subscribe((datasets) => datasets.forEach(d => this.update(d)));
+
 		this.startPrice = data.close * (1 + options.spread);
 		this.update(data);
+
+		while(this.isOpen && this.current.next) {
+			this.update(this.current.next);
+		}
 	}
 
 	get dir() { return this.options.dir; }
@@ -76,12 +83,6 @@ module.exports = class Trade {
 
 		this.maxDrawdown = Math.min(0, this.profit, this.maxDrawdown || 0);
 		this.maxDrawup = Math.max(0, this.profit, this.maxDrawup || 0);
-	}
-
-	makeFutureAware() {
-		while(this.isOpen && this.current.next) {
-			this.update(this.current.next);
-		}
 	}
 
 	closeAt(price) {

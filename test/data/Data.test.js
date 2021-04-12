@@ -144,7 +144,7 @@ test('.getRSI()', () => {
 	expect(data.getRSI(4)).toBe(100);
 	expect(data.getRSI(3)).toBe(100);
 	expect(data.getRSI(2)).toBe(100);
-	expect(data.getRSI(1)).toBe(100);
+	expect(data.getRSI(1)).toBe(0);
 	expect(series.last.getRSI(100)).toBe(100);
 })
 
