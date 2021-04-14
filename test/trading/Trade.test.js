@@ -56,11 +56,8 @@ describe('Trade', () => {
 	test('Take Profit (step-by-step)', () => {
 		const data = [
 			Data.create('2000-01-01T00:00:00', 100, 100, 105, 106),
-			Data.create('2000-01-01T01:00:00', 102, 105, 110, 112),
-			Data.create('2000-01-01T01:00:00', 102, 110, 112, 130),
-			Data.create('2000-01-01T02:00:00', 104, 112, 105, 112),
-			Data.create('2000-01-01T03:00:00', 95, 105, 97, 107),
-			Data.create('2000-01-01T04:00:00', 55, 97, 80, 110),
+			Data.create('2000-01-01T01:00:00', 99, 105, 110, 112),
+			Data.create('2000-01-01T02:00:00', 102, 110, 112, 130),
 		];
 		const series = new DataSeries(data.slice(0, 1))
 		const options = new TradeOptions({
@@ -70,16 +67,23 @@ describe('Trade', () => {
 		});
 		const trade = new Trade(series.first, options);
 
+		expect(trade.actualStopLoss).toBe(.2);
+		expect(trade.actualTakeProfit).toBe(.2);
+		expect(trade.profit).toBeCloseTo(-0.0045);
+
 		series.addData(data[1]);
+		expect(trade.currentPrice).toBe(110);
 		expect(trade.profit).toBeCloseTo(0.043);
 		expect(trade.isOpen).toBe(true);
 		expect(trade.isClosed).toBe(false);
 
 		series.addData(data[2]);
-		expect(trade.isOpen).toBe(false);
-		expect(trade.profit).toBeCloseTo(0.2);
+		expect(trade.isClosed).toBe(true);
+		expect(trade.nightlyCost).toBe(0);
+		expect(trade.netProfit).toBeCloseTo(.2);
+		expect(trade.profit).toBeCloseTo(.2);
 
-		expect(trade.maxDrawdown).toBeCloseTo(0);
+		expect(trade.maxDrawdown).toBeCloseTo(-0.0613);
 		expect(trade.maxDrawup).toBeCloseTo(0.2);
 	})
 
@@ -104,7 +108,7 @@ describe('Trade', () => {
 		expect(trade.isOpen).toBe(false);
 		expect(trade.profit).toBeCloseTo(0.2);
 
-		expect(trade.maxDrawdown).toBeCloseTo(0);
+		expect(trade.maxDrawdown).toBeCloseTo(-0.052);
 		expect(trade.maxDrawup).toBeCloseTo(0.2);
 	})
 
@@ -116,8 +120,8 @@ describe('Trade', () => {
 			Data.create('2000-01-04T02:00:00', 104, 112, 105, 112),
 			Data.create('2000-01-05T03:00:00', 95, 105, 97, 137),
 		])
-		const options = new TradeOptions({
-			...TradeOptions.etoroIndicesPreset(10),
+		const options = TradeOptions.forEtoroIndices({
+			leverage: 10,
 			takeProfit: 2,
 			stopLoss: 1,
 		});
@@ -127,10 +131,10 @@ describe('Trade', () => {
 		expect(trade.isOpen).toBe(false);
 		expect(trade.profit).toBeCloseTo(2);
 		expect(trade.daysOpen).toBe(4);
-		expect(trade.totalNightlyCost).toBe(0.0032);
-		expect(trade.netProfit).toBe(1.9968);
+		expect(trade.totalNightlyCost).toBe(0.00032);
+		expect(trade.netProfit).toBeCloseTo(1.997);
 
-		expect(trade.maxDrawdown).toBeCloseTo(-0.022449);
+		expect(trade.maxDrawdown).toBeCloseTo(-0.967);
 		expect(trade.maxDrawup).toBeCloseTo(2);
 	})
 })

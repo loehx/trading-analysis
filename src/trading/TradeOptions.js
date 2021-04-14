@@ -8,14 +8,14 @@ module.exports = class TradeOptions {
 		const {
 			takeProfit,
 			stopLoss,
-			dir,
+			direction,
 			spread,
 			leverage,
 			nightlyCost
 		} = {
 			takeProfit: 0.5,
 			stopLoss: 0.5,
-			dir: 'long',
+			direction: 'long',
 			spread: 0.0002,
 			leverage: 1,
 			nightlyCost: 0,
@@ -31,8 +31,8 @@ module.exports = class TradeOptions {
 		assert(() => stopLoss > 0);
 		this.stopLoss = stopLoss;
 
-		ensure(dir, ['long', 'short']);
-		this.dir = dir;
+		ensure(direction, ['long', 'short']);
+		this.direction = direction;
 
 		ensure(spread, Number);
 		assert(() => spread >= 0);
@@ -49,13 +49,15 @@ module.exports = class TradeOptions {
 		Object.freeze(this);
 	}
 
-	static etoroIndicesPreset(leverage) {
-		return 	{
+	static forEtoroIndices(options) {
+		const leverage = options.leverage || 1;
+		return new TradeOptions({
 			leverage,
-			nightlyCost: 0.00008 * leverage,
-			spread: 0.0045 / 20 * leverage,
+			nightlyCost: 0.00008,
+			spread: 0.00017, // TODO: PRÜFEN
 			stopLoss: 0.5,
 			takeProfit: 0.5,
-		}
+			...options
+		});
 	}
 }

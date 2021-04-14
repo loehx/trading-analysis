@@ -17,7 +17,9 @@ module.exports = class Trade {
 
 		data.dataSeries.subscribe((datasets) => datasets.forEach(d => this.update(d)));
 
-		this.startPrice = data.close * (1 + options.spread);
+		this.startPrice = data.close * (1 + (options.spread * options.leverage));
+		this.low = this.startPrice;
+		this.high = this.startPrice;
 		this.update(data);
 
 		while(this.isOpen && this.current.next) {
@@ -25,7 +27,7 @@ module.exports = class Trade {
 		}
 	}
 
-	get dir() { return this.options.dir; }
+	get direction() { return this.options.direction; }
 	get leverage() { return this.options.leverage; }
 	get spread() { return this.options.spread; }
 	get nightlyCost() { return this.options.nightlyCost; }
@@ -51,11 +53,34 @@ module.exports = class Trade {
 		return this.profit - this.totalNightlyCost;
 	}
 
+	get actualTakeProfit() {
+		return this.takeProfit / this.leverage;
+	}
+
+	get actualStopLoss() {
+		return this.stopLoss / this.leverage;
+	}
+
+	get stopLossPrice() {
+		return round(this.startPrice * (1 - this.actualStopLoss), 6);
+	}
+
+	get takeProfitPrice() {
+		return round(this.startPrice * (1 + this.actualTakeProfit), 6);
+	}
+
+	get maxDrawdown() {
+		return round((this.low / this.startPrice - 1) * this.leverage, 6); 
+	}
+
+	get maxDrawup() {
+		return round((this.high / this.startPrice - 1) * this.leverage, 6); 
+	}
+
 	setTakeProfit(takeProfit) {
 		ensure(takeProfit, Number);
 		assert(() => takeProfit > 0);
 		this.takeProfit = takeProfit;
-		this.actualTakeProfit = takeProfit / this.leverage;
 	}
 
 	setStopLoss(stopLoss) {
@@ -63,7 +88,6 @@ module.exports = class Trade {
 		assert(() => stopLoss <= 1);
 		assert(() => stopLoss > 0);
 		this.stopLoss = stopLoss;
-		this.actualStopLoss = stopLoss / this.leverage;
 	}
 
 	update(data) {
@@ -72,8 +96,7 @@ module.exports = class Trade {
 		this.current = data;
 		this.currentPrice = data.close;
 
-		const stopLossPrice = this.startPrice * (1 - this.actualStopLoss);
-		const takeProfitPrice = this.startPrice * (1 + this.actualTakeProfit);
+		const { stopLossPrice, takeProfitPrice } = this;
 		const stopLossAndTakeProfitAtTheSameTime = data.low <= stopLossPrice && data.high >= takeProfitPrice;
 		if (stopLossAndTakeProfitAtTheSameTime) {
 			console.warn('stopLossAndTakeProfitAtTheSameTime', {
@@ -90,8 +113,12 @@ module.exports = class Trade {
 			this.closeAt(takeProfitPrice);
 		}
 
-		this.maxDrawdown = Math.min(0, this.profit, this.maxDrawdown || 0);
-		this.maxDrawup = Math.max(0, this.profit, this.maxDrawup || 0);
+		if (data.low < this.low) {
+			this.low = Math.max(data.low, stopLossPrice);
+		}
+		if (data.high > this.high) {
+			this.high = Math.min(data.high, takeProfitPrice);
+		}
 	}
 
 	closeAt(price) {
@@ -112,5 +139,46 @@ module.exports = class Trade {
 			(this.netProfit > 0 ? '+' : '') + (this.netProfit * 100).toFixed(0) + '%',
 			this.isClosed && 'CLOSED'
 		].filter(k => k).join(' ');
+	}
+
+	getSummary() {
+		return {
+			startPrice: this.startPrice,
+			currentPrice: this.currentPrice,
+			
+			openedAt: this.openedAt.toString(),
+			current: this.current.toString(),
+			closedAt: this.closedAt?.toString(),
+			
+			direction: this.direction,
+			leverage: this.leverage,
+			spread: this.spread,
+			
+			nightlyCost: this.nightlyCost,
+			daysOpen: this.daysOpen,
+			totalNightlyCost: this.totalNightlyCost,
+
+			isOpen: this.isOpen,
+			isClosed: this.isClosed,
+
+			profit: this.profit,
+			netProfit: this.netProfit,
+			
+			stopLoss: this.options.stopLoss,
+			stopLossPrice: this.stopLossPrice, 
+			actualStopLoss: this.actualStopLoss,
+
+			takeProfit: this.options.takeProfit,
+			actualTakeProfit: this.actualTakeProfit,
+			takeProfitPrice: this.takeProfitPrice,
+
+			maxDrawdown: this.maxDrawdown,
+			maxDrawup: this.maxDrawup,
+		};
+	}
+
+	summary(log) {
+		const _log = (log && log.write ? log.write : log) || console.log;
+		_log(JSON.stringify(this.getSummary(), null, 4))
 	}
 }
