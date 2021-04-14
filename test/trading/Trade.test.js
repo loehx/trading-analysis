@@ -5,7 +5,6 @@ describe('Trade', () => {
 	test('new Trade()', () => {
 		const series = DataSeries.mock(10, 1, 'hour');
 		const options = new TradeOptions({
-			amount: 1,
 			spread: 0.0045,
 		});
 		const trade = new Trade(series.first, options);
@@ -25,7 +24,6 @@ describe('Trade', () => {
 		const options = new TradeOptions({
 			takeProfit: .2,
 			stopLoss: .2,
-			amount: 1,
 			spread: 0.0045,
 		});
 		const trade = new Trade(series.first, options);
@@ -49,7 +47,6 @@ describe('Trade', () => {
 
 		series.addData(data[5]);
 		expect(trade.profit).toBeCloseTo(-0.2);
-		expect(trade.profitability).toBeCloseTo(-0.2);
 		expect(trade.isOpen).toBe(false);
 
 		expect(trade.maxDrawdown).toBeCloseTo(-0.2);
@@ -69,7 +66,6 @@ describe('Trade', () => {
 		const options = new TradeOptions({
 			takeProfit: .2,
 			stopLoss: .2,
-			amount: 1,
 			spread: 0.0045,
 		});
 		const trade = new Trade(series.first, options);
@@ -99,10 +95,10 @@ describe('Trade', () => {
 		const options = new TradeOptions({
 			takeProfit: .2,
 			stopLoss: .2,
-			amount: 1,
 			spread: 0.0045,
 		});
 		const trade = new Trade(series.first, options);
+		expect(trade.options).toBeInstanceOf(TradeOptions);
 
 		expect(trade.current.index).toBe(2);
 		expect(trade.isOpen).toBe(false);
@@ -110,5 +106,31 @@ describe('Trade', () => {
 
 		expect(trade.maxDrawdown).toBeCloseTo(0);
 		expect(trade.maxDrawup).toBeCloseTo(0.2);
+	})
+
+	test('Cost', () => {
+		const series = new DataSeries([
+			Data.create('2000-01-01T00:00:00', 100, 100, 105, 106),
+			Data.create('2000-01-02T01:00:00', 102, 105, 110, 112),
+			Data.create('2000-01-03T01:00:00', 102, 110, 112, 120),
+			Data.create('2000-01-04T02:00:00', 104, 112, 105, 112),
+			Data.create('2000-01-05T03:00:00', 95, 105, 97, 137),
+		])
+		const options = new TradeOptions({
+			...TradeOptions.etoroIndicesPreset(10),
+			takeProfit: 2,
+			stopLoss: 1,
+		});
+		const trade = new Trade(series.first, options);
+
+		expect(trade.current.index).toBe(4);
+		expect(trade.isOpen).toBe(false);
+		expect(trade.profit).toBeCloseTo(2);
+		expect(trade.daysOpen).toBe(4);
+		expect(trade.totalNightlyCost).toBe(0.0032);
+		expect(trade.netProfit).toBe(1.9968);
+
+		expect(trade.maxDrawdown).toBeCloseTo(-0.022449);
+		expect(trade.maxDrawup).toBeCloseTo(2);
 	})
 })
