@@ -13,12 +13,7 @@ module.exports = class TradeOptions {
 			leverage,
 			nightlyCost
 		} = {
-			takeProfit: 0.5,
-			stopLoss: 0.5,
-			direction: 'long',
-			spread: 0.0002,
-			leverage: 1,
-			nightlyCost: 0,
+			...TradeOptions.defaultOptions,
 			...options
 		}
 
@@ -47,6 +42,19 @@ module.exports = class TradeOptions {
 		this.nightlyCost = nightlyCost;
 
 		Object.freeze(this);
+	}
+
+	toString() {
+		return `${this.direction} x${this.leverage} sl:${this.stopLoss*100}% tp:${this.takeProfit*100}%`;
+	}
+
+	static defaultOptions = {
+		takeProfit: 0.5,
+		stopLoss: 0.5,
+		direction: 'long',
+		spread: 0.0002,
+		leverage: 1,
+		nightlyCost: 0,
 	}
 
 	static forEtoroIndices(options) {

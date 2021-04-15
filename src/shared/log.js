@@ -72,6 +72,9 @@ class Log {
 
     _write(type, message, ...args) {
         message = message || '(empty)';
+        if (typeof message === 'object') {
+            message = JSON.stringify(message, null, 4);
+        }
         message = `[${this.name}] ${message}`
         this.eventBus.emit(type, message, ...args);
         this.eventBus.emit('all', type.toString() + ': ' + message, ...args);

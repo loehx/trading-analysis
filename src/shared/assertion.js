@@ -2,6 +2,7 @@
 const assertion = module.exports = {
 
     assert(cond, message, ...args) {
+        return;
         if (typeof cond === 'function') {
             if (!cond()) {
                 assertion._throwAssertionFailed(cond.toString(), [message, ...args]);
@@ -19,6 +20,7 @@ const assertion = module.exports = {
     },
 
     ensure(value, validator) {
+        return;
         let valid;
         let err;
 

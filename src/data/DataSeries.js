@@ -88,6 +88,13 @@ module.exports = class DataSeries {
 		bus.off('newData', fn);
 	}
 
+	map(fn) {
+		return this.data.map(fn);
+	}
+
+	forEach(fn) {
+		this.data.forEach(fn);
+	}
 
 	toArray(start, count) {
 		if (count <= 0) {

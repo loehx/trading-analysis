@@ -15,8 +15,6 @@ module.exports = class Trade {
 		this.setStopLoss(options.stopLoss);
 		this.openedAt = data;
 
-		data.dataSeries.subscribe((datasets) => datasets.forEach(d => this.update(d)));
-
 		this.startPrice = data.close * (1 + (options.spread * options.leverage));
 		this.low = this.startPrice;
 		this.high = this.startPrice;
@@ -24,6 +22,10 @@ module.exports = class Trade {
 
 		while(this.isOpen && this.current.next) {
 			this.update(this.current.next);
+		}
+
+		if (this.isOpen) {
+			data.dataSeries.subscribe((datasets) => datasets.forEach(d => this.update(d)));
 		}
 	}
 
@@ -99,11 +101,11 @@ module.exports = class Trade {
 		const { stopLossPrice, takeProfitPrice } = this;
 		const stopLossAndTakeProfitAtTheSameTime = data.low <= stopLossPrice && data.high >= takeProfitPrice;
 		if (stopLossAndTakeProfitAtTheSameTime) {
-			console.warn('stopLossAndTakeProfitAtTheSameTime', {
-				this: this,
-				stopLossPrice,
-				takeProfitPrice
-			});
+			// console.warn('stopLossAndTakeProfitAtTheSameTime', {
+			// 	this: this,
+			// 	stopLossPrice,
+			// 	takeProfitPrice
+			// });
 		}
 
 		if (data.low <= stopLossPrice) {

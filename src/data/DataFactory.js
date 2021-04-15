@@ -24,7 +24,10 @@ module.exports = class DataFactory {
 
 	async getDataSeries(symbol, options) {
 		assert(() => symbol.getter);
-		const data = await symbol.getter(this, options);
+		let data = await symbol.getter(this, options);
+		if (options.limit && data.length > options.limit) {
+			data = data.slice(0, options.limit);
+		}
 		const dataSeries = DataSeries.fromRawData(data);
 		return dataSeries;
 	}

@@ -32,9 +32,18 @@ const util = module.exports = {
         const count = end - start;
         const result = new Array();
         for (let i = start; i <= end; i += step) {
-            result.push(i);
+            result.push(util.round(i, 10));
         }
         return result;
+    },
+
+    sumBy(args, fn) {
+        ensure(args);
+        let sum = 0;
+        for (let i = 0; i < args.length; i++) {
+            sum += fn(args[i]);
+        }
+        return util.round(sum, 10);
     },
 
     avg(args) {
@@ -43,7 +52,7 @@ const util = module.exports = {
         for (let i = 0; i < args.length; i++) {
             avg += args[i]/args.length;
         }
-        return this.round(avg, 10);
+        return util.round(avg, 10);
     },
 
     avgBy(args, fn) {
@@ -52,7 +61,7 @@ const util = module.exports = {
         for (let i = 0; i < args.length; i++) {
             avg += fn(args[i])/args.length;
         }
-        return this.round(avg, 10);
+        return util.round(avg, 10);
     },
 
     minBy(args, fn) {
@@ -83,8 +92,12 @@ const util = module.exports = {
         return _.memoize(fn, (...a) => new Array(a).join('_'));
     },
 
-    round(n, precision) {
-        return _.round(n, precision);
+    round(n, precision = 0) {
+        const res = _.round(n, precision);
+        if (isNaN(res)) {
+            return n;
+        }
+        return res;
     },
 
     timeout(milliseconds) {
@@ -94,4 +107,33 @@ const util = module.exports = {
             }, milliseconds);
         });
     },
+
+    crossJoinByProps(obj) {
+
+        let result = [{}]; 
+
+        for (const key in obj) {
+            if (Object.hasOwnProperty.call(obj, key)) {
+                const value = obj[key];
+                if (Array.isArray(value)) {
+                    const newResult = new Array(result.length * value.length);
+                    newResult.length = 0;
+                    value.forEach(v => {
+                        result.forEach(r => {
+                            newResult.push({
+                                ...r,
+                                [key]: v
+                            });
+                        });
+                    })
+                    result = newResult;
+                }
+                else {
+                    result.forEach(r => r[key] = value);
+                }
+            }
+        }
+
+        return result;
+    }
 };
