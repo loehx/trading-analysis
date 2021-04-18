@@ -3,14 +3,19 @@ const util = require('../../src/shared/util');
 describe('util', () => {
 
     test.each([
-        [0, [0, 5], undefined, [1, 0, 0, 0, 0, 0]],
-        [1, [0, 5], undefined, [0, 1, 0, 0, 0, 0]],
-        [2, [0, 5], undefined, [0, 0, 1, 0, 0, 0]],
-        [5, [0, 5], undefined, [0, 0, 0, 0, 0, 1]],
-        [-1, [0, 5], true, [0, 0, 0, 0, 0, 0]],
-        [6, [0, 5], true, [0, 0, 0, 0, 0, 0]],
-    ])('.oneHot(%p, %p, %p)', (value, range, ignoreOverflow, expected) => {
-        expect(util.oneHot(value, range, ignoreOverflow)).toStrictEqual(expected);
+        [0, [0, 5], undefined, undefined, [1, 0, 0, 0, 0, 0]],
+        [1, [0, 5], undefined, undefined, [0, 1, 0, 0, 0, 0]],
+        [2, [0, 5], undefined, undefined, [0, 0, 1, 0, 0, 0]],
+        [5, [0, 5], undefined, undefined, [0, 0, 0, 0, 0, 1]],
+        [-1, [0, 5], true, undefined, [0, 0, 0, 0, 0, 0]],
+        [6, [0, 5], true, undefined, [0, 0, 0, 0, 0, 0]],
+        [0, [0, 100], true, 20, [1, 0, 0, 0, 0, 0]],
+        [10, [0, 100], true, 20, [0, 1, 0, 0, 0, 0]],
+        [20, [0, 100], true, 20, [0, 1, 0, 0, 0, 0]],
+        [30, [0, 100], true, 20, [0, 0, 1, 0, 0, 0]],
+        [100, [0, 100], true, 20, [0, 0, 0, 0, 0, 1]],
+    ])('.oneHot(%p, %p, %p, $p)', (value, range, ignoreOverflow, stepSize, expected) => {
+        expect(util.oneHot(value, range, ignoreOverflow, stepSize)).toStrictEqual(expected);
     });
 
     test.each([
@@ -50,4 +55,22 @@ describe('util', () => {
             {A: 2, B: 2, C: 3}
         ]);
     }) 
+
+    test.each([
+        [new Date(), new Date(), '0ms'],
+        [1, 2, '1ms'],
+        [2, 1, '-1ms'],
+        [2, , '2ms'],
+        [Date.parse('2000-01-01T00:00:00'), Date.parse('2000-01-01T00:00:01'), '1s'],
+        [Date.parse('2000-01-01T00:00:00'), Date.parse('2000-01-01T00:01:00'), '1m'],
+        [Date.parse('2000-01-01T00:00:00'), Date.parse('2000-01-01T00:01:01'), '1m'],
+        [Date.parse('2000-01-01T00:00:00'), Date.parse('2000-01-01T01:01:01'), '1h'],
+        [Date.parse('2000-01-01T00:00:00'), Date.parse('2000-01-02T01:01:01'), '1d'],
+        [Date.parse('2000-01-01T00:00:00'), Date.parse('2000-01-08T01:01:01'), '7d'],
+        [Date.parse('2000-01-01T00:00:00'), Date.parse('2000-02-08T01:01:01'), '38d'],
+        [Date.parse('2000-01-01T00:00:00'), Date.parse('2001-02-08T01:01:01'), '1y'],
+        
+    ])('.humanizeDuration(%p, %p)', (from, to, expected) => {
+        expect(util.humanizeDuration(from, to)).toStrictEqual(expected);
+    });
 })

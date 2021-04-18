@@ -60,7 +60,7 @@ module.exports = class Data {
 	}
 
 	getPrev(n, includeSelf = false, padding = false) {
-		return this._getCached(`p${n}${includeSelf}${padding}`, () => {
+		//return this._getCached(`p${n}${includeSelf}${padding}`, () => {
 			this._requireAttachment();
 			const s = includeSelf ? 1 : 0;
 			const start = this.index - n + s;
@@ -69,20 +69,20 @@ module.exports = class Data {
 				return new Array(n - this.index).fill(null).concat(result);
 			}
 			return result;
-		})
+		//})
 	}
 
 	getNext(n, includeSelf = false, padding = false) {
-		return this._getCached(`n${n}${includeSelf}${padding}`, () => {
+		//return this._getCached(`n${n}${includeSelf}${padding}`, () => {
 			this._requireAttachment();
 			const s = includeSelf ? 1 : 0;
 			const start = this.index + s;
-			const result = this.dataSeries.toArray(start, start + n);
+			const result = this.dataSeries.toArray(start, n);
 			if (padding) {
 				return [ ...result, ...new Array(n - this.index).fill(null)];
 			}
 			return result;
-		})
+		//})
 	}
 
 	getSMA(period) {
@@ -168,7 +168,7 @@ module.exports = class Data {
 
 	toString() {
 		const { timestamp, low, high, open, close } = this;
-		return `${moment(timestamp).format()} h:${high} o:${open} c:${close} l:${low}`
+		return `[Data(${moment(timestamp).format()} ${open}o ${close}c ${low}l ${high}h)]`;
 	}
 
 	toObject() {

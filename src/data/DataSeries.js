@@ -32,6 +32,7 @@ module.exports = class DataSeries {
 	get avgClose() { return util.avgBy(this.data, d => d.close); }
 	get avgHigh() { return util.avgBy(this.data, d => d.high); }
 	get avgLow() { return util.avgBy(this.data, d => d.low); }
+	get avgVolume() { return util.avgBy(this.data, d => d.volume); }
 	
 	get progress() { return this.close / this.open - 1 }
 	
@@ -55,6 +56,16 @@ module.exports = class DataSeries {
 
 	get opens() {
 		return this.__getCached('opens', () => this.data.map(d => d.open));
+	}
+
+	getResolution() {
+		const first = this.data[0];
+		const second = this.data[1];
+		if (!second) {
+			return '?';
+		}
+		const ms = second.timestamp - first.timestamp;
+		return util.humanizeDuration(ms);
 	}
 
 	addData(data) {
@@ -136,7 +147,7 @@ module.exports = class DataSeries {
 
 	toString() {
 		const { first, last, length } = this;
-		return `${length} datasets between ${moment(first.timestamp).format()} - ${moment(last.timestamp).format()}`
+		return `[DataSeries(${length} x ${this.getResolution()} / ${moment(first.timestamp).format('YYYY-MM-DD')} ${util.humanizeDuration(first.timestamp, last.timestamp)})]`
 	}
 
 	__getCached(key, getter) {

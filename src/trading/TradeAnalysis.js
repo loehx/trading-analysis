@@ -12,7 +12,7 @@ module.exports = class TradeAnalysis {
 		this.factory = new DataFactory(this.log);
 	}
 
-	async getNasdaqStatistic(symbol, tradeOptions) {
+	async runStatistic(symbol, tradeOptions) {
 		const series = await this.factory.getDataSeries(symbol, {
 			limit: 10000
 		});
@@ -20,12 +20,13 @@ module.exports = class TradeAnalysis {
 		this.log.write(`creating statistic for ${symbol.name} options with ${series.length} data points ...`);
 		const statistic = this._createStatistic(series, {
 			...tradeOptions,
-			stopLoss: range(0.2, 1.0, 0.2),
-			takeProfit: range(0.2, 3.0, 0.2),
+			stopLoss: range(0.4, 1.0, 0.2),
+			takeProfit: range(0.4, 1.0, 0.2),
+			maxDays: [2, 8, 12],
 			leverage: 20
 		})
 		this.log.write('statistic created successfully');
-		this.log.write('---- RESULTS: -----------------------------');
+		this.log.write('---- ' + symbol.name + ' -----------------------------');
 		statistic.map(k => k.summary).forEach(k => this.log.write(k));
 
 
@@ -48,7 +49,7 @@ module.exports = class TradeAnalysis {
 
 			const tradeOptions = new TradeOptions(testOption);
 
-			this.log.startTimer(`#${no++} of ${testOptions.length} ${tradeOptions.toString()}`);
+			this.log.startTimer(`#${no++} of ${testOptions.length}`);
 
 			const trades = dataSeries.map(d => {
 				const trade = new Trade(d, tradeOptions);
@@ -61,27 +62,29 @@ module.exports = class TradeAnalysis {
 
 			const evaluation = {
 				profit: sumBy(trades, t => t.__profit),
-				profit_per_day: sumBy(trades, t => t.__profit / (t.daysOpen+1)),
+				profit_per_day: sumBy(trades, t => t.__profit) / sumBy(trades, t => t.daysOpen),
 				//profitable_trades: trades.filter(t => t.__profit > 0).length,
-				takeProfit: round(testOption.takeProfit * 100) + '%',
-				stopLoss: round(testOption.stopLoss * 100) + '%',
+				//takeProfit: round(testOption.takeProfit * 100) + '%',
+				//stopLoss: round(testOption.stopLoss * 100) + '%',
 				//average_profit: avgBy(trades, t => t.__profit),
-				average_days: avgBy(trades, t => t.daysOpen),
-				closed: (sumBy(trades, t => t.isClosed) / trades.length * 100).toFixed(0) + '%',
+				
+				//avg_days: avgBy(trades, t => t.daysOpen),
+				options: tradeOptions.toString(),
+				//closed: (sumBy(trades, t => t.isClosed) / trades.length * 100).toFixed(0) + '%',
 			};
 
-			// this.log.stopTimer();
+			this.log.stopTimer();
 			// this.log.write('evaluation:', evaluation);
 
-			this.log.stopTimer();
-			const summary = Object.entries(evaluation).map(([k,v]) => k + ': ' + round(v, 2)).join(' \t');
+			//this.log.stopTimer();
+			const summary = Object.entries(evaluation).map(([k,v]) => k + ': ' + round(v, 4)).join(' \t');
 			this.log.write(summary);
 
 			evaluation.summary = summary;
 			results.push(evaluation);
 		}
 
-		results.sort((a,b) => b.profit - a.profit);
+		results.sort((a,b) => b.profit_per_day - a.profit_per_day);
 		return results.slice(0, 10);
 	}
 

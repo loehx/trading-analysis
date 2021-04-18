@@ -161,3 +161,31 @@ test('.subscribe()', () => {
 		series.addData(should);
 	});
 })
+
+test('.getResolution() -> 1h', () => {
+	const series = DataSeries.mock(2, 1, 'hour');
+	expect(series.getResolution()).toBe('1h');
+})
+
+test('.getResolution() -> 1d', () => {
+	const series = new DataSeries([
+		Data.create('2000-01-01T00:00:00', 1, 1, 1, 1),
+		Data.create('2000-01-02T00:00:01', 1, 1, 1, 1)
+	])
+	expect(series.getResolution()).toBe('1d');
+})
+
+test('.getResolution() -> 5m', () => {
+	const series = new DataSeries([
+		Data.create('2000-01-01T00:00:00', 1, 1, 1, 1),
+		Data.create('2000-01-01T00:05:11', 1, 1, 1, 1)
+	])
+	expect(series.getResolution()).toBe('5m');
+})
+
+test('.getResolution() -> ?', () => {
+	const series = new DataSeries([
+		Data.create('2000-01-01T00:00:00', 1, 1, 1, 1)
+	])
+	expect(series.getResolution()).toBe('?');
+})

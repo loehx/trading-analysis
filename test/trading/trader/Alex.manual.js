@@ -5,6 +5,6 @@ const Alex = require("../../../src/trading/trader/Alex");
 	const log = Log.consoleLog('ManualTest');
 	const alex = new Alex(log);
 
-	await alex.prepare();
+	await alex.run();
 })();
 

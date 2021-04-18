@@ -1,13 +1,15 @@
-const { memoize } = require('lodash');
+const { memoize, result } = require('lodash');
 var moment = require('moment');
 const { ensure } = require('./assertion');
 const _ = require('lodash');
+const prettyMilliseconds = require('pretty-ms');
 
 const util = module.exports = {
 
-    oneHot(value, range, ignoreOverflow) {
+    oneHot(value, range, ignoreOverflow, stepSize = 1) {
         const [from, to] = range;
-        const r = new Array(to - from + 1).fill(0);
+        const size = (to - from) / stepSize;
+        const r = new Array(size + 1).fill(0);
 
         if (typeof value === 'undefined') {
             throw "util.oneHot(..) failed: value is undefined";
@@ -23,13 +25,32 @@ const util = module.exports = {
         if (value < from) {
             throw "util.oneHot(..) failed: value " + value + " is too small to fit in range: [" + range.join(', ') + ']';
         }
-        const i = Math.round(value) - from;
+        const i = Math.round((value - from) / stepSize);
         r[i] = 1;
         return r;
     },
 
+    reverseOneHot(prediction, range, stepSize = 1, resultCount = 5) {
+        const [from, to] = range;
+        const result = [];
+
+        for (let i = 0; i < prediction.length; i++) {
+            const possibility = util.round(prediction[i], 3);
+            const a = from + (stepSize * i);
+            const b = a + stepSize;
+            if (possibility > 0) {
+                result.push({
+                    range: a + ' - ' + b,
+                    possibility
+                });
+            }
+        }
+
+        result.sort((a,b) => b.possibility - a.possibility);
+        return result.slice(0, resultCount);
+    },
+
     range(start, end, step = 1) {
-        const count = end - start;
         const result = new Array();
         for (let i = start; i <= end; i += step) {
             result.push(util.round(i, 10));
@@ -135,5 +156,12 @@ const util = module.exports = {
         }
 
         return result;
+    },
+
+    humanizeDuration(from, to) {
+        const ms = (to ?? (from * 2)) - from;
+        return prettyMilliseconds(ms, {
+            compact: true
+        })
     }
 };

@@ -1,4 +1,5 @@
 const { assert, ensure } = require("../shared/assertion");
+const { round } = require("../shared/util");
 
 
 module.exports = class TradeOptions {
@@ -11,7 +12,8 @@ module.exports = class TradeOptions {
 			direction,
 			spread,
 			leverage,
-			nightlyCost
+			nightlyCost,
+			maxDays
 		} = {
 			...TradeOptions.defaultOptions,
 			...options
@@ -19,12 +21,12 @@ module.exports = class TradeOptions {
 
 		ensure(takeProfit, Number);
 		assert(() => takeProfit > 0);
-		this.takeProfit = takeProfit;
+		this.takeProfit = round(takeProfit, 3);
 
 		ensure(stopLoss, Number);
 		assert(() => stopLoss <= 1);
 		assert(() => stopLoss > 0);
-		this.stopLoss = stopLoss;
+		this.stopLoss = round(stopLoss, 3);
 
 		ensure(direction, ['long', 'short']);
 		this.direction = direction;
@@ -41,11 +43,15 @@ module.exports = class TradeOptions {
 		assert(() => nightlyCost >= 0);
 		this.nightlyCost = nightlyCost;
 
+		ensure(maxDays, Number);
+		assert(() => maxDays >= 0);
+		this.maxDays = maxDays;
+
 		Object.freeze(this);
 	}
 
 	toString() {
-		return `${this.direction} x${this.leverage} sl:${this.stopLoss*100}% tp:${this.takeProfit*100}%`;
+		return `[TradeOptions(${this.direction} x${this.leverage} +${this.takeProfit.toFixed(1)}/-${this.stopLoss.toFixed(1)} ${this.maxDays && this.maxDays + 'd'})]`;
 	}
 
 	static defaultOptions = {

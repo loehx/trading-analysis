@@ -12,9 +12,13 @@ module.exports = class DataFactory {
 
 	constructor(log, cache) {
 		this.log = new Log('DataFactory', log);
-		this.twelveData = new TwelveData(config['twelveData.apiKey'], this.log);
 		this.cache = cache || new Cache('datafactory');
 		this.backtestMarket = BacktestMarket;
+	}
+
+	get twelveData() {
+
+		return this._twelveData || (this._twelveData = new TwelveData(config['twelveData.apiKey'], this.log));
 	}
 
 	async getData(symbol, options) {
@@ -24,32 +28,31 @@ module.exports = class DataFactory {
 
 	async getDataSeries(symbol, options) {
 		assert(() => symbol.getter);
+		this.log.startTimer('.getDataSeries(' + symbol.name + ', ' + JSON.stringify(options) +')')
 		let data = await symbol.getter(this, options);
-		if (options.limit && data.length > options.limit) {
-			data = data.slice(0, options.limit);
+		if (options && options.limit && data && data.length > options.limit) {
+			data = data.slice(data.length - options.limit);
 		}
 		const dataSeries = DataSeries.fromRawData(data);
+		this.log.stopTimer();
+		this.log.write(`received: ${dataSeries.toString()}`)
 		return dataSeries;
 	}
 
 	async _fetchBacktestMarketData(symbol, options = {}) {
-
-		this.log.startTimer(`_fetchBacktestMarketData(${symbol})`);
 		let datasets = await BacktestMarket.getData(symbol);
 
 		if (options.from) {
 			const from = moment.utc(options.from);
 			datasets = datasets.filter(d => from.isBefore(d.timestamp));
 		};
-		
-		this.log.stopTimer();
 
 		return datasets;
 	}
 
 	async _fetchTwelveData(options) {
 		ensure(options, Object);
-		this.log.write(`fetch data from TwelveData: ${options.symbol} ${options.interval} ...`, options);
+		//this.log.write(`fetch data from TwelveData: ${options.symbol} ${options.interval} ...`, options);
 
 		const datasets = await this._getCached(options, async () => {
 			return await this.twelveData.fetch({
@@ -58,11 +61,11 @@ module.exports = class DataFactory {
 		})
 
 		if (datasets === null) {
-			this.log.write(`... fetch failed.`);
+			//this.log.write(`... fetch failed.`);
 			return null;
 		}
 		else {
-			this.log.write(`... fetched ${datasets.length} datasets successfully`);
+			//this.log.write(`... fetched ${datasets.length} datasets successfully`);
 			return datasets;
 		}
 	}

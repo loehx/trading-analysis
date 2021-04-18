@@ -8,11 +8,11 @@ const TradeAnalysis = require("../../src/trading/tradeAnalysis");
 	const log = Log.consoleLog('ManualTest');
 	const analysis = new TradeAnalysis(log);
 
-	await analysis.getNasdaqStatistic(
+	await analysis.runStatistic(
 		Symbols.NASDAQ_HOURLY_HISTORICAL,
 		TradeOptions.forEtoroIndices({}));
 
-	await analysis.getNasdaqStatistic(
+	await analysis.runStatistic(
 		Symbols.EURUSD_HOURLY_HISTORICAL,
 		TradeOptions.forEtoroIndices({}));
 })();

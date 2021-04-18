@@ -33,6 +33,7 @@ module.exports = class Trade {
 	get leverage() { return this.options.leverage; }
 	get spread() { return this.options.spread; }
 	get nightlyCost() { return this.options.nightlyCost; }
+	get maxDays() { return this.options.maxDays; }
 
 	get isOpen() { return !this.closedAt; }
 	get isClosed() { return !!this.closedAt; }
@@ -113,6 +114,9 @@ module.exports = class Trade {
 		}
 		else if (data.high >= takeProfitPrice) {
 			this.closeAt(takeProfitPrice);
+		}
+		else if (this.daysOpen >= this.maxDays) {
+			this.close();
 		}
 
 		if (data.low < this.low) {
