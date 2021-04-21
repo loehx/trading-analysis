@@ -6,10 +6,11 @@ const prettyMilliseconds = require('pretty-ms');
 
 const util = module.exports = {
 
-    oneHot(value, range, ignoreOverflow, stepSize = 1) {
+    oneHot(value, range, ignoreOverflow, arraySize) {
         const [from, to] = range;
-        const size = (to - from) / stepSize;
-        const r = new Array(size + 1).fill(0);
+        const r = new Array(arraySize ? arraySize : (to - from + 1)).fill(0);
+        const stepSize = (to - from + 1) / r.length;
+        console.log(value, range, ignoreOverflow, arraySize, 'stepSize:', stepSize);
 
         if (typeof value === 'undefined') {
             throw "util.oneHot(..) failed: value is undefined";
@@ -25,14 +26,15 @@ const util = module.exports = {
         if (value < from) {
             throw "util.oneHot(..) failed: value " + value + " is too small to fit in range: [" + range.join(', ') + ']';
         }
-        const i = Math.round((value - from) / stepSize);
+        const i = Math.floor((value - from) / stepSize);
         r[i] = 1;
         return r;
     },
 
-    reverseOneHot(prediction, range, stepSize = 1, resultCount = 5) {
+    reverseOneHot(prediction, range, resultCount = 5) {
         const [from, to] = range;
         const result = [];
+        const stepSize = (to - from) / prediction.length;
 
         for (let i = 0; i < prediction.length; i++) {
             const possibility = util.round(prediction[i], 3);
@@ -40,13 +42,13 @@ const util = module.exports = {
             const b = a + stepSize;
             if (possibility > 0) {
                 result.push({
-                    range: a + ' - ' + b,
-                    possibility
+                    r: [a, b],
+                    p: possibility
                 });
             }
         }
 
-        result.sort((a,b) => b.possibility - a.possibility);
+        result.sort((a,b) => b.p - a.p);
         return result.slice(0, resultCount);
     },
 
@@ -85,6 +87,10 @@ const util = module.exports = {
         return util.round(avg, 10);
     },
 
+    min(args) {
+        return this.minBy(args, d => d);
+    },
+
     minBy(args, fn) {
         ensure(args, Array);
         let min = Infinity;
@@ -95,6 +101,10 @@ const util = module.exports = {
             }
         }
         return min;
+    },
+
+    max(args) {
+        return this.maxBy(args, d => d);
     },
 
     maxBy(args, fn) {

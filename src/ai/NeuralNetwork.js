@@ -163,11 +163,11 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		ensure(xs, Array);
 		ensure(xs[0], Array);
 		xs = tf.tensor2d(xs);
-		return this.model.predict(xs).dataSync();
+		return new Array(this.model.predict(xs).dataSync());
 	}
 
 	predict(x) {
 		const prediction = this.predictBulk([x]);
-		return prediction;
+		return prediction[0];
 	}
 };

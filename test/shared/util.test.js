@@ -9,13 +9,13 @@ describe('util', () => {
         [5, [0, 5], undefined, undefined, [0, 0, 0, 0, 0, 1]],
         [-1, [0, 5], true, undefined, [0, 0, 0, 0, 0, 0]],
         [6, [0, 5], true, undefined, [0, 0, 0, 0, 0, 0]],
-        [0, [0, 100], true, 20, [1, 0, 0, 0, 0, 0]],
-        [10, [0, 100], true, 20, [0, 1, 0, 0, 0, 0]],
-        [20, [0, 100], true, 20, [0, 1, 0, 0, 0, 0]],
-        [30, [0, 100], true, 20, [0, 0, 1, 0, 0, 0]],
-        [100, [0, 100], true, 20, [0, 0, 0, 0, 0, 1]],
-    ])('.oneHot(%p, %p, %p, $p)', (value, range, ignoreOverflow, stepSize, expected) => {
-        expect(util.oneHot(value, range, ignoreOverflow, stepSize)).toStrictEqual(expected);
+        [0, [0, 100], true, 6, [1, 0, 0, 0, 0, 0]],
+        [10, [0, 100], true, 6, [1, 0, 0, 0, 0, 0]],
+        [20, [0, 100], true, 6, [0, 1, 0, 0, 0, 0]],
+        [30, [0, 100], true, 6, [0, 1, 0, 0, 0, 0]],
+        [100, [0, 100], true, 6, [0, 0, 0, 0, 0, 1]],
+    ])('.oneHot(%p, %p, %p, $p)', (value, range, ignoreOverflow, arraySize, expected) => {
+        expect(util.oneHot(value, range, ignoreOverflow, arraySize)).toStrictEqual(expected);
     });
 
     test.each([

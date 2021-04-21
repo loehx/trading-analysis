@@ -61,6 +61,7 @@ module.exports = class TradeOptions {
 		spread: 0.0002,
 		leverage: 1,
 		nightlyCost: 0,
+		maxDays: Infinity
 	}
 
 	static forEtoroIndices(options) {

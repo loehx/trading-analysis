@@ -43,10 +43,10 @@ test('XOR', async () => {
 		expect(state.accuracy).toBeGreaterThan(0.49);
 
 		if (state.epochs >= 200) {
-			expect(nn.predict([0,0])).toBeLessThan(.5);
-			expect(nn.predict([1,0])).toBeGreaterThan(.5);
-			expect(nn.predict([0,1])).toBeGreaterThan(.5);
-			expect(nn.predict([1,1])).toBeLessThan(.5);
+			expect(nn.predict([0,0])[0]).toBeLessThan(.5);
+			expect(nn.predict([1,0])[0]).toBeGreaterThan(.5);
+			expect(nn.predict([0,1])[0]).toBeGreaterThan(.5);
+			expect(nn.predict([1,1])[0]).toBeLessThan(.5);
 			state.stop();
 		}
 	}

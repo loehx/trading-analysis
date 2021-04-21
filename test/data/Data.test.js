@@ -35,7 +35,7 @@ test('new Data(...).toString()', () => {
 		open: 1,
 		close: 1
 	});
-	expect(data.toString()).toBe('2020-01-01T00:00:00+01:00 h:1 o:1 c:1 l:1');
+	expect(data.toString()).toBe('[Data(2020-01-01T00:00:00+01:00 1o 1c 1l 1h)]');
 })
 
 test('Data.random()', () => {
