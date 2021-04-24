@@ -82,4 +82,23 @@ describe('util', () => {
     ])('.scaleMinMax(%p, %p)', (arr, minusOneToOne, expected) => {
         expect(util.scaleMinMax(arr, minusOneToOne)).toStrictEqual(expected);
     });
+
+    test.each([
+        [1, [1]],
+        [5, [1, 2, 3, 5]],
+        
+    ])('.fibonacci(%p)', (max, expected) => {
+        expect(util.fibonacci(max)).toStrictEqual(expected);
+    });
+
+    test.each([
+        [[1,2,3], 3, [0,0,0]],
+        [[1,3,3], 3, [0,0.666667,0]],
+        [[1,3,10], 3, [0,-1.666667,0]],
+        [[1,2,3,4,5,6,7,8,9,10], 5, [0,0,0,0,0,0,0,0,0,0]],
+        [[1,2,3,4,5,6,7,8,9,10], 1, [0,0,0,0,0,0,0,0,0,0]],
+        [[1,2,3,4,5,6,7,8,9,10], 100, [0,0,0,0,0,0,0,0,0,0]],
+    ])('.scaleByMean(%p, $p)', (data, period, expected) => {
+        expect(util.scaleByMean(data, period)).toStrictEqual(expected);
+    });
 })

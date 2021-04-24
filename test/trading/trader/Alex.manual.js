@@ -6,5 +6,6 @@ const Alex = require("../../../src/trading/trader/Alex");
 	const alex = new Alex(log);
 
 	await alex.run();
+
 })();
 

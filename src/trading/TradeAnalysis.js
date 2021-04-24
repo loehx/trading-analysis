@@ -15,7 +15,7 @@ module.exports = class TradeAnalysis {
 
 	async runStatistic(symbol, options) {
 		const series = await this.factory.getDataSeries(symbol, {
-			//limit: 10000
+			limit: 1000
 		});
 
 		// plotData({

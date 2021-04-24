@@ -3,6 +3,7 @@ var moment = require('moment');
 const { ensure } = require('./assertion');
 const _ = require('lodash');
 const prettyMilliseconds = require('pretty-ms');
+const { args } = require('commander');
 
 const util = module.exports = {
 
@@ -75,6 +76,39 @@ const util = module.exports = {
 
         const range = max - min;
         return arr.map(a => (a - min) / range);
+    },
+
+    scaleByMean(arr, period) {
+        const result = new Array(arr.length);
+        result.length = 0;
+
+        period = Math.min(period, arr.length);
+        period = Math.round(period / 2);
+
+        for (let i = 0; i < arr.length; i++) {
+            const val = arr[i];
+            
+            let avg = 0;
+            let max = (arr.length - 1);
+            let from = i - period;
+            let to = i + period;
+            
+            if (from < 0) {
+                to = Math.min(to + from, max);
+                from = 0;
+            }
+            else if (to > max) {
+                from = Math.max(from + (to - max), 0);
+                to = max;
+            }
+
+            for (let a = from; a <= to; a++) {
+                avg += arr[a] / (to - from + 1);
+            }
+
+            result.push(util.round(val - avg, 6));
+        }
+        return result;
     },
 
     range(start, end, step = 1) {
@@ -198,5 +232,15 @@ const util = module.exports = {
         return prettyMilliseconds(ms, {
             compact: true
         })
+    },
+
+    fibonacci(max) {
+        const seq = [];
+        let pre = 0;
+        for(let i = 1; i <= max; i += pre) {
+            pre = i - pre;
+            seq.push(i);
+        }
+        return seq;
     }
 };

@@ -1,6 +1,5 @@
 const { plot, Plot, stack } = require('nodeplotlib');
 const util = require('./util');
-const data = [{x: [1, 3, 4, 5], y: [3, 12, 1, 4], type: 'line'}];
 
 const plotting = module.exports = {
 
@@ -32,20 +31,31 @@ const plotting = module.exports = {
 				if (!Array.isArray(y)) {
 					return;
 				}
+
+				let x = options.x || options[k].map((_,i) => i + 1);
 				
 				if (options.scaleMinMax) {
 					y = util.scaleMinMax(y, true);
 				}
 
 				return {
-					x: options.x || options[k].map((_,i) => i + 1),
+					x,
 					y,
-					type: options.type || 'scatter',
-					mode: options.mode || 'markers',
+					type: options.type,
+					mode: options.mode,
 					text: labels,
 					name: k
 				};
 			}).filter(k => k)
 		);
+	},
+
+	plot3d(z) {
+		plot([
+			{
+				z,
+				type: 'surface'
+			}
+		]);
 	},
 };
