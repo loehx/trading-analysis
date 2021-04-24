@@ -24,9 +24,9 @@ module.exports = class Trade {
 			this.update(this.current.next);
 		}
 
-		if (this.isOpen) {
-			data.dataSeries.subscribe((datasets) => datasets.forEach(d => this.update(d)));
-		}
+		// if (this.isOpen) {
+		// 	data.dataSeries.subscribe((datasets) => datasets.forEach(d => this.update(d)));
+		// }
 	}
 
 	get direction() { return this.options.direction; }

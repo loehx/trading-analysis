@@ -64,14 +64,16 @@ module.exports = class TradeOptions {
 		maxDays: Infinity
 	}
 
+	static etoroIndices = {
+		nightlyCost: 0.00008,
+		spread: 0.00017, // TODO: PRÜFEN
+		stopLoss: 0.5,
+		takeProfit: 0.5,
+	}
+
 	static forEtoroIndices(options) {
-		const leverage = options.leverage || 1;
 		return new TradeOptions({
-			leverage,
-			nightlyCost: 0.00008,
-			spread: 0.00017, // TODO: PRÜFEN
-			stopLoss: 0.5,
-			takeProfit: 0.5,
+			...TradeOptions.etoroIndices,
 			...options
 		});
 	}

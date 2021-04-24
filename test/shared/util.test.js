@@ -73,4 +73,13 @@ describe('util', () => {
     ])('.humanizeDuration(%p, %p)', (from, to, expected) => {
         expect(util.humanizeDuration(from, to)).toStrictEqual(expected);
     });
+
+    test.each([
+        [[1,2,3], , [0, 0.5, 1]],
+        [[-2, -1, 0, 1, 2], , [0, .25, .5, .75, 1]],
+        [[-2, -1, 0, 1, 2], true, [-1, -.5, 0, 0.5, 1]],
+        
+    ])('.scaleMinMax(%p, %p)', (arr, minusOneToOne, expected) => {
+        expect(util.scaleMinMax(arr, minusOneToOne)).toStrictEqual(expected);
+    });
 })

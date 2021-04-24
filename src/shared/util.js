@@ -52,6 +52,31 @@ const util = module.exports = {
         return result.slice(0, resultCount);
     },
 
+    scaleMinMax(arr, zeroOneToOne) {
+        let min = Infinity;
+        let max = -Infinity;
+        const len = arr.length;
+        for (let i = 0; i < len; i++) {
+            const n = arr[i];
+            if (n < min) {
+                min = n;
+            }
+            if (n > max) {
+                max = n;
+            }
+        }
+
+        if (zeroOneToOne) {
+            min = Math.min(min, max * -1);
+            max = Math.min(max, min * -1);
+            const range = max - min;
+            return arr.map(a => (a - min) / range * 2 - 1);
+        }
+
+        const range = max - min;
+        return arr.map(a => (a - min) / range);
+    },
+
     range(start, end, step = 1) {
         const result = new Array();
         for (let i = start; i <= end; i += step) {
