@@ -45,26 +45,33 @@ module.exports = class Alex extends Trader {
 	}
 
 	async run() {
-		const series = await this.factory.getDataSeries(Symbols.NASDAQ_HOURLY_HISTORICAL, {
-			limit: 1000
+		const symbol = Symbols.NASDAQ_HOURLY_HISTORICAL;
+		const limit = undefined;
+
+		const series = await this.factory.getDataSeries(symbol, {
+			limit
 		});
 
 		this.log.startTimer('.getTrainingData(series)');
 
-		const trainingData = await this.getTrainingData(series);
+		const trainingData = await this.cache.getCachedAsync(`${series.toString()}`, async () => {
+			this.log.startTimer('turn data into training data');
+			const data = await this.getTrainingData(series);	
+			this.log.stopTimer('done!');
+			//plot3d(data.map(k => k.x));
+			return [data.map(d => ({ x: d.x, y: d.y }))]
+		})
 
 		console.log('--- TRAINING DATA --------------------------------');		
-		plot3d(trainingData.map(k => k.x));
-
-		return;
-
-		// this.cache.setItem('log', logLines);
-
-		// console.log('--- VALIDATION DATA ------------------------------');
-		// validationData.slice(0, 20).forEach(d => {
-		// 	console.log(d.index, d.x.slice(0, 30).join('') + '...', '->', d.y.join(''), d.data.toString());
+		// plotData({
+		// 	'x100': trainingData[100].x,
+		// 	'x150': trainingData[150].x,
+		// 	'x500': trainingData[500].x,
 		// })
 
+		//plot3d(trainingData.slice(trainingData.length - 100, trainingData.length - 50).map(k => k.x));
+		
+return;
 		const iterator = this.nn1.train({
 			data: trainingData,
 			epochs: 10,
@@ -87,13 +94,16 @@ module.exports = class Alex extends Trader {
 
 		for (let i = 200; i < (series.length - 8); i++) {
 			const data = series.get(i);
-			const periods = util.fibonacci(500);
+			const periods = util.fibonacci(1000);
+
+			this.log.writeProgress(i, series.length);
 
 			const timestamp = moment(data.timestamp);
 			result.push({
 				index: index++,
 				data: data,
 				scaleMinMax: [
+					data.volume,
 					timestamp.isoWeekday(),
 					timestamp.get('hour'),
 					...periods.map(p => data.getSMA(p)),
@@ -106,13 +116,13 @@ module.exports = class Alex extends Trader {
 					data.close,
 					data.low,
 					data.high,
-					data.volume,
 				],
 				halfLife: [
 					...periods.map(p => maxBy(data.getPrev(p), d => d.open) < data.open),
 					...periods.map(p => maxBy(data.getPrev(p), d => d.close) < data.close),
 					...periods.map(p => minBy(data.getPrev(p), d => d.open) > data.open),
 					...periods.map(p => minBy(data.getPrev(p), d => d.close) > data.close),
+					...Object.values(data.getCandlePattern()),
 				],
 				x: [
 					//...util.range(1, 100).map(k => Math.random() > 0.5 ? 1 : 0)
@@ -132,7 +142,13 @@ module.exports = class Alex extends Trader {
 
 		for (let i = 0; i < result[0].scaleByMean.length; i++) {
 			const original = result.map(r => r.scaleByMean[i]);
-			const converted = util.scaleByMean(original);
+			const converted = util.scaleMinMax(util.scaleByMean(original, 100)); // TODO: Konfigurierbar machen
+			result.forEach((r, n) => r.x.push(converted[n]));
+		}
+
+		for (let i = 0; i < result[0].halfLife.length; i++) {
+			const original = result.map(r => r.halfLife[i]);
+			const converted = util.halfLife(original.map(k => k ? 1 : 0), .8);
 			result.forEach((r, n) => r.x.push(converted[n]));
 		}
 

@@ -156,7 +156,7 @@ module.exports = class Data {
 
 	getCandlePattern() {
 		return this._getCached('candlePattern', () => {
-			const prev = this.getPrev(4, true);
+			const prev = this.getPrev(10, true);
 			return indicators.getCandlePattern(		
 				prev.map(d => d.open),
 				prev.map(d => d.high),

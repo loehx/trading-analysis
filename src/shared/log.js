@@ -8,6 +8,7 @@ class Log {
         ensure(name, String);
         
         if (log) {
+            this.parent = log;
             this.name = `${log.name}.${name}`;
             this.eventBus = log.eventBus;
         }
@@ -15,6 +16,7 @@ class Log {
             this.name = name || 'unnamed';
             this.eventBus = new EventEmitter();
         }
+        this.timers = [];
     }
 
     getName() {
@@ -22,18 +24,18 @@ class Log {
     }
 
     startTimer(name) {
-        this.timers = this.timers || [];
+        this.write(name + '...');
         this.timers.push({
             start: new Date(),
             name: name
         })
     }
 
-    stopTimer() {
+    stopTimer(message) {
         const timer = this.timers.pop();
         assert(timer, 'No timer found to stop.');
         const ms = new Date() - timer.start;
-        this.write(`"${timer.name}" took ${ms/1000} seconds`);
+        this.write(`${message || timer.name} (after ${util.humanizeDuration(ms)})`);
     }
 
     assert(...args) {
@@ -54,6 +56,25 @@ class Log {
         }
     }
 
+    writeProgress(count, total, debounceMilliseconds = 2000) {
+        const lastCall = new Date() - (this._lastprog || 0);
+        if (lastCall <= debounceMilliseconds) {
+            return;
+        }
+
+        this._lastprog = new Date();
+        const timer = this.timers[this.timers.length - 1];
+        if (timer) {
+            const timePassed = new Date() - timer.start;
+            const remaining = (timePassed / count) * (total - count);
+
+            this.write(`${count} of ${total} (${Math.round(count / total * 100)}%) after ${util.humanizeDuration(timePassed)} (remaining: ${util.humanizeDuration(remaining)})`);
+        }
+        else {
+            this.write(`${count} of ${total} (${Math.round(count / total * 100)}%)`);
+        }
+    }
+
     write(message, ...args) {
         this._write('write', message, ...args);
     }
@@ -70,12 +91,17 @@ class Log {
         this.eventBus.on(name, callback);
     }
 
+    get timersActive() {
+        return (this.parent?.timersActive || 0) + this.timers.length;
+    }
+
     _write(type, message, ...args) {
         message = message || '(empty)';
         if (typeof message === 'object') {
             message = JSON.stringify(message, null, 4);
         }
-        message = `[${this.name}] ${message}`
+        const tabs = new Array(this.timersActive).fill('\t').join('');
+        message = `[${this.name}] ${tabs}${message}`
         this.eventBus.emit(type, message, ...args);
         this.eventBus.emit('all', type.toString() + ': ' + message, ...args);
     }

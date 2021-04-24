@@ -9,31 +9,40 @@ const {
 } = technicalindicators;
 
 const CANDLE_PATTERNS = {
-	bullish: 4,
-	bearish: 4,
-	abandonedbaby: 2,
+	// bullish: 20,
+	// // bearish: 4,
+	abandonedbaby: 3,
 	doji: 2,
 	bearishengulfingpattern: 2,
 	bullishengulfingpattern: 2,
 	darkcloudcover: 2,
-	downsidetasukigap: 2,
+	downsidetasukigap: 3,
 	dragonflydoji: 2,
 	gravestonedoji: 2,
 	bullishharami: 2,
 	bearishharami: 2,
 	bullishharamicross: 2,
 	bearishharamicross: 2,
-	eveningdojistar: 2,
-	eveningstar: 2,
-	morningdojistar: 2,
-	morningstar: 2,
+	eveningdojistar: 3,
+	eveningstar: 3,
+	morningdojistar: 3,
+	morningstar: 3,
 	bullishmarubozu: 2,
 	bearishmarubozu: 2,
 	piercingline: 2,
 	bullishspinningtop: 2,
 	bearishspinningtop: 2,
-	threeblackcrows: 2,
-	threewhitesoldiers: 2,
+	threeblackcrows: 3,
+	threewhitesoldiers: 3,
+	//bullishhammer: 2,
+	//bearishhammer: 2,
+	//bullishinvertedhammer: 2,
+	//bearishinvertedhammer: 2,
+	hammerpattern: 5,
+	hangingman: 5,
+	shootingstar: 5,
+	tweezertop: 5,
+	tweezerbottom: 5,
 };
 
 module.exports = {
@@ -138,14 +147,22 @@ module.exports = {
 
 		for (let name in CANDLE_PATTERNS) {
 
+			const period = CANDLE_PATTERNS[name];
 			const fn = technicalindicators[name];
-			ensure(fn);
+			assert(fn != null, 'technicalindicators.' + name + ' must be defined.');
+
+			if (open.length < period) {
+				
+			console.log(name, period);
+				result[name] = 0;
+				continue;
+			}
 
 			result[name] = fn({
-				open,
-				high,
-				close,
-				low,
+				open: open.slice(open.length - period),
+				close: close.slice(close.length - period),
+				high: high.slice(high.length - period),
+				low: low.slice(low.length - period),
 			}) ? 1 : 0;
 		}
 
@@ -171,9 +188,10 @@ module.exports = {
 			const res = result[name] = new Array(total).fill(null);
 
 			const fn = technicalindicators[name];
-			ensure(fn);
+			assert(fn != null, 'technicalindicators.' + name + ' bullishhammer must be defined.');
 
-			for (let i = 0; i < total; i++) {
+			console.log(name, fn);
+			for (let i = 0; i < total - period; i++) {
 				if (i >= period) {
 					const r = fn({
 						open: open.slice(i - period, i + 1),

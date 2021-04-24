@@ -50,7 +50,10 @@ const plotting = module.exports = {
 		);
 	},
 
-	plot3d(z) {
+	plot3d(z, options) {
+		if (options?.transpose) {
+			z = util.transpose(z);
+		}
 		plot([
 			{
 				z,

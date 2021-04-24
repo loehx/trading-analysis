@@ -3,7 +3,8 @@ const fs = require("fs");
 const config = require("../../config");
 const { assert } = require('./assertion');
 class Cache {
-	constructor(storageKey, caching = false) {
+	constructor(storageKey, beautify = false) {
+		this.beautify = beautify;
 		const directory = config['cache.directory'];
 		assert(() => config['cache.directory']);
 		this.basePath = path.join(directory, storageKey);
@@ -17,7 +18,7 @@ class Cache {
 	}
 
 	setItem(key, value) {
-		const data = JSON.stringify(value, null, 4);
+		const data = this.beautify ? JSON.stringify(value, null, 4) : JSON.stringify(value);
 		fs.writeFileSync(this._filePath(key), data, 'utf8');
 	}
 

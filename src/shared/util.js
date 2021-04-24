@@ -4,6 +4,7 @@ const { ensure } = require('./assertion');
 const _ = require('lodash');
 const prettyMilliseconds = require('pretty-ms');
 const { args } = require('commander');
+const { transpose } = require("lodash-transpose");
 
 const util = module.exports = {
 
@@ -75,7 +76,7 @@ const util = module.exports = {
         }
 
         const range = max - min;
-        return arr.map(a => (a - min) / range);
+        return arr.map(a => util.round((a - min) / range, 6));
     },
 
     scaleByMean(arr, period) {
@@ -83,32 +84,88 @@ const util = module.exports = {
         result.length = 0;
 
         period = Math.min(period, arr.length);
-        period = Math.round(period / 2);
 
-        for (let i = 0; i < arr.length; i++) {
+        result.push(0);
+
+        for (let i = 1; i < arr.length; i++) {
             const val = arr[i];
             
             let avg = 0;
             let max = (arr.length - 1);
-            let from = i - period;
-            let to = i + period;
-            
-            if (from < 0) {
-                to = Math.min(to + from, max);
-                from = 0;
-            }
-            else if (to > max) {
-                from = Math.max(from + (to - max), 0);
-                to = max;
+            let forecast = 0;
+            let counter = 0;
+
+            const pStart = Math.max(i - period, 1);
+            const pEnd = i;
+
+            for (let p = pStart; p < pEnd; p++) {
+                const v = arr[p];
+                avg += v;
+                counter++;
             }
 
-            for (let a = from; a <= to; a++) {
-                avg += arr[a] / (to - from + 1);
-            }
+            avg = avg / counter;
 
             result.push(util.round(val - avg, 6));
+
         }
         return result;
+    },
+
+    // scaleByMean(arr, period) {
+    //     const result = new Array(arr.length);
+    //     result.length = 0;
+
+    //     period = Math.min(period, arr.length);
+
+    //     result.push(0);
+
+    //     for (let i = 1; i < arr.length; i++) {
+    //         const val = arr[i];
+            
+    //         let avg = 0;
+    //         let max = (arr.length - 1);
+    //         let forecast = 0;
+    //         let counter = 0;
+
+    //         const pStart = Math.max(i - period, 1);
+    //         const pEnd = i;
+
+    //         console.log(i, period, pEnd - pStart, pStart, pEnd);
+    //         for (let p = pStart; p < pEnd; p++) {
+    //             const v = arr[p];
+    //             const pre = arr[p - 1];
+    //             const progress = v - pre;
+    //             avg += progress;
+    //             counter++;
+    //         }
+
+    //         avg = avg / counter;
+    //         forecast = arr[i - 1] + avg;
+
+    //         result.push(val - forecast);
+
+    //     }
+    //     return result;
+    // },
+
+    halfLife(arr, multiplier = .5) {
+        const clone = arr.slice();
+        for (let i = 1; i < clone.length; i++) {
+            const val = clone[i];
+            if (val === 0) {
+                const prev = clone[i - 1];
+                if (prev > 0) {
+                    const newVal = util.round(prev * multiplier, 6);
+                    clone[i] = prev === newVal ? 0 : newVal;
+                }
+            }
+        }
+        return clone;
+    },
+
+    transpose(arr) {
+        return transpose(arr);
     },
 
     range(start, end, step = 1) {
