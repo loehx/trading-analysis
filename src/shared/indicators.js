@@ -188,10 +188,9 @@ module.exports = {
 			const res = result[name] = new Array(total).fill(null);
 
 			const fn = technicalindicators[name];
-			assert(fn != null, 'technicalindicators.' + name + ' bullishhammer must be defined.');
+			assert(fn != null, 'technicalindicators.' + name + ' must be defined.');
 
-			console.log(name, fn);
-			for (let i = 0; i < total - period; i++) {
+			for (let i = 0; i < total; i++) {
 				if (i >= period) {
 					const r = fn({
 						open: open.slice(i - period, i + 1),

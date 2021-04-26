@@ -11,9 +11,9 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		id, 
 		optimizer = 'adam', 
 		loss = 'meanSquaredError', 
-		inputActivation = 'tanh', 
+		inputActivation, 
 		inputUnits, 
-		outputActivation = 'softmax', 
+		outputActivation, 
 		hiddenLayers = [], 
 		log
 	}) {
@@ -36,10 +36,16 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 
 		const m = this.model = tf.sequential();
 
+		let lastUnits;
+
+		if (this.inputActivation === 'leakyrelu') {
+			m.add(tf.layers.leakyReLU({ inputShape: [inputCount] }));
+		}
+
 		// first layer
 		m.add(tf.layers.dense({
-			units: this.inputUnits || inputCount, 
-			activation: this.inputActivation,
+			units: lastUnits = (this.inputUnits || inputCount), 
+			activation: this.inputActivation === 'leakyrelu' ? undefined : this.inputActivation,
 			inputShape: [inputCount],
 		}));
 
@@ -49,7 +55,14 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 				m.add(tf.layers.dropout(layer.dropout));
 			}
 			else {
-				m.add(tf.layers.dense(layer));
+				if (layer.activation === 'leakyrelu') {
+					m.add(tf.layers.leakyReLU());
+				}
+				m.add(tf.layers.dense({ ...layer, activation: undefined }));
+			}
+
+			if ('units' in layer) {
+				lastUnits = layer.units;
 			}
 		}
 		
@@ -81,7 +94,7 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		}
 	}
 
-	async* train({ data, epochs = 10, learningRate, validationData, validationSplit, randomize }) {
+	async* train({ data, epochs = 10, learningRate, validationData, validationSplit, randomize, accuracyBaseLine, minProbability }) {
 		assert(() => data.length > 0);
 
 		const inputCount = data[0].x.length;
@@ -119,10 +132,11 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 			model.optimizer.learningRate = learningRate
 		}
 
-		let lastHistory = null;
+		let memHistory = null;
 		let counter = 0;
 		const stop = () => _stop = true;
 		const setLearningRate = (lr) => model.optimizer.learningRate = lr;
+		const historyLog = [];
 
 		this._log(`Start training with ${data.length} datasets (in: ${inputCount} / out: ${outputCount})`);
 		this._log(`#[epoch] [accuracy] / [loss] after [seconds]`)
@@ -131,31 +145,84 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 			const { history } = await model.fit(xs, ys, { 
 				epochs, 
 				verbose: 0,
+				batchSize: 200,
+				workers: 8, 
+				useMultiprocessing: true,
 				validationData: val_xs ? [val_xs, val_ys] : undefined,
 			});
+
+			const validation = validationData ? this.getActualAccuracy(data, validationData, minProbability) : null;
 			const acc = (history.val_acc || history.acc);
-			const accuracy = round(acc[acc.length - 1], 6);
+			const accuracy = round(validation?.accuracy || acc[acc.length - 1], 6) - (accuracyBaseLine || 0);
 			const loss = round(history.loss[history.loss.length - 1], 6);
 			const _epochs = counter * epochs;
-			const lossIncrease = lastHistory ? round(loss / lastHistory.loss - 1, 6) : 0;
-			const accuracyIncrease = lastHistory ? round(accuracy / lastHistory.accuracy - 1, 6) : 0;
+			const lossIncrease = memHistory ? round(loss / memHistory.loss - 1, 6) : 0;
+			const accuracyIncrease = memHistory ? round(accuracy / memHistory.accuracy - 1, 6) : 0;
 			const ms = (new Date() - start);
 			const duration = util.humanizeDuration(ms);
 			
 			this._log(`#${_epochs} ${accuracy.toFixed(6)} / ${loss.toFixed(6)} after ${duration}`)
 
-			yield lastHistory = {
+			memHistory = {
 				epochs: _epochs,
 				accuracy,
+				validation,
 				loss,
+				acc: acc[acc.length - 1],
 				lossIncrease, 
 				accuracyIncrease,
 				seconds: ms / 1000,
+				history: historyLog,
 				stop,
-				setLearningRate,
+				setLearningRate
 			}
+
+			historyLog.push(memHistory);
+			yield memHistory;
 		}
 		return null;
+	}
+
+	getActualAccuracy(trainingData, validationData, minProbability) {
+
+		const predictions = this.predictBulk(validationData.map(k => k.x));
+
+		let correct = 0;
+		let incorrect = 0;
+		let skipped = 0;
+		
+		for (let i = 0; i < predictions.length; i++) {
+
+			const pred = predictions[i];
+			const xy = trainingData[i];
+			const valXy = validationData[i];
+			valXy.prediction = new Array(pred.length);
+
+			for (let n = 0; n < pred.length; n++) {
+				//console.log(i, n, pred, xy.y);
+				if (pred[n] < minProbability) {
+					skipped++;
+					valXy.prediction[n] = 0;
+					continue; // skip
+				}
+				if (xy.y[n]) {
+					correct++;
+					valXy.prediction[n] = 1;
+				}
+				else {
+					incorrect++;
+					valXy.prediction[n] = -1;
+				}
+			}
+		}
+
+		return {
+			accuracy: util.round(correct / (correct + incorrect), 6),
+			correct,
+			incorrect,
+			sum: correct + incorrect,
+			skipped
+		};
 	}
 
 	predictBulk(xs) {
@@ -163,7 +230,7 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		ensure(xs, Array);
 		ensure(xs[0], Array);
 		xs = tf.tensor2d(xs);
-		return new Array(this.model.predict(xs).dataSync());
+		return new Array(this.model.predict(xs, {batchSize: 64}).arraySync())[0];
 	}
 
 	predict(x) {

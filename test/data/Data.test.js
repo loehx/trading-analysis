@@ -174,13 +174,11 @@ test('.getCandlePattern()', () => {
 	const pattern = series.last.getCandlePattern();
 
 	expect(pattern.abandonedbaby).toBe(0); 
-	expect(pattern.bearish).toBe(0); 
 	expect(pattern.bearishengulfingpattern).toBe(0); 
 	expect(pattern.bearishharami).toBe(0); 
 	expect(pattern.bearishharamicross).toBe(0); 
 	expect(pattern.bearishmarubozu).toBe(0); 
 	expect(pattern.bearishspinningtop).toBe(1); 
-	expect(pattern.bullish).toBe(0); 
 	expect(pattern.bullishengulfingpattern).toBe(0); 
 	expect(pattern.bullishharami).toBe(0); 
 	expect(pattern.bullishharamicross).toBe(0); 

@@ -108,8 +108,11 @@ module.exports = class DataSeries {
 	}
 
 	toArray(start, count) {
-		if (count <= 0) {
+		if (count === 0) {
 			return [];
+		}
+		if (count < 0) {
+			return this.data.slice(start, this.data.length + count);	
 		}
 		return this.data.slice(start, count && (start + count));
 	}

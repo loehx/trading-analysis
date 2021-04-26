@@ -128,7 +128,7 @@ test('.getCandlePatterns()', () => {
 	const series = DataSeries.mock(5, 1, 'hour');
 	const patterns = series.getCandlePatterns();
 	expect(patterns.bearishspinningtop).toStrictEqual([null, null, 1, 1, 1]);
-	expect(patterns.abandonedbaby).toStrictEqual([null, null, 0, 0, 0]);
+	expect(patterns.abandonedbaby).toStrictEqual([null, null, null, 0, 0]);
 })
 
 test('.toArray()', () => {

@@ -54,7 +54,7 @@ const util = module.exports = {
         return result.slice(0, resultCount);
     },
 
-    scaleMinMax(arr, zeroOneToOne) {
+    scaleMinMax(arr) {
         let min = Infinity;
         let max = -Infinity;
         const len = arr.length;
@@ -68,13 +68,12 @@ const util = module.exports = {
             }
         }
 
-        if (zeroOneToOne) {
-            min = Math.min(min, max * -1);
-            max = Math.min(max, min * -1);
-            const range = max - min;
-            return arr.map(a => (a - min) / range * 2 - 1);
+        if (max === min) {
+            if (min === 0) {
+                return new Array(arr.length).fill(0);
+            }
+            min = 0;
         }
-
         const range = max - min;
         return arr.map(a => util.round((a - min) / range, 6));
     },
@@ -91,20 +90,19 @@ const util = module.exports = {
             const val = arr[i];
             
             let avg = 0;
-            let max = (arr.length - 1);
-            let forecast = 0;
             let counter = 0;
 
             const pStart = Math.max(i - period, 1);
             const pEnd = i;
 
-            for (let p = pStart; p < pEnd; p++) {
+            for (let p = pStart; p <= pEnd; p++) {
                 const v = arr[p];
                 avg += v;
                 counter++;
             }
 
             avg = avg / counter;
+            //console.log(val, avg, pStart, pEnd);
 
             result.push(util.round(val - avg, 6));
 
@@ -286,6 +284,9 @@ const util = module.exports = {
 
     humanizeDuration(from, to) {
         const ms = (to ?? (from * 2)) - from;
+        if (!isFinite(ms)) {
+            return 'infinite';
+        }
         return prettyMilliseconds(ms, {
             compact: true
         })
