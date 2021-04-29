@@ -42,6 +42,10 @@ module.exports = class DataSeries {
 		return items;
 	}
 
+	get timestamps() {
+		return this.__getCached('timestamps', () => this.data.map(d => d.timestamp));
+	}
+
 	get highs() {
 		return this.__getCached('highs', () => this.data.map(d => d.high));
 	}
@@ -56,6 +60,10 @@ module.exports = class DataSeries {
 
 	get opens() {
 		return this.__getCached('opens', () => this.data.map(d => d.open));
+	}
+
+	get volumes() {
+		return this.__getCached('volumes', () => this.data.map(d => d.volume));
 	}
 
 	getResolution() {
@@ -80,7 +88,7 @@ module.exports = class DataSeries {
 			d._attachTo(this, i)
 		});
 		if (this.__c) {
-			this.__c = null;
+			delete this['__c']; 
 		}
 		if (this.eventBus) {
 			this.eventBus.emit('newData', data);
@@ -148,9 +156,30 @@ module.exports = class DataSeries {
 		return this.__getCached('cap', getter);
 	}
 
+	calculate(name, period) {
+		return this.__getCached(name + period, () => {
+			const data = this.getOpenCloseHighLowVolume();
+			return indicators.get(name, period, data);
+		})
+	}
+
+	getOpenCloseHighLowVolume() {
+		return {
+			open: this.opens,
+			high: this.highs,
+			close: this.closes,
+			low: this.lows,
+			volume: this.volumes
+		};
+	}
+
 	toString() {
 		const { first, last, length } = this;
 		return `[DataSeries(${length} x ${this.getResolution()} / ${moment(first.timestamp).format('YYYY-MM-DD')} ${util.humanizeDuration(first.timestamp, last.timestamp)})]`
+	}
+
+	clearCache() {
+		this.__c = null;
 	}
 
 	__getCached(key, getter) {
@@ -159,7 +188,6 @@ module.exports = class DataSeries {
 			Object.defineProperty(this, '__c', { writable: true });
 			cache = this.__c = {};
 		}
-
 		return cache[key] || (cache[key] = getter());
 	}
 

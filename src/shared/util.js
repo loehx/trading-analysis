@@ -300,5 +300,9 @@ const util = module.exports = {
             seq.push(i);
         }
         return seq;
+    },
+
+    flatten(...args) {
+        return _.flatten(...args);
     }
 };

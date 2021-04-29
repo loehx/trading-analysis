@@ -154,16 +154,20 @@ module.exports = class Data {
 		return current / prev - 1;
 	}
 
+	calculate(name, period) {
+		const values = this.dataSeries.calculate(name, period);
+		//console.log(name, period, values[this.index]);
+		return values[this.index];
+	}
+
 	getCandlePattern() {
-		return this._getCached('candlePattern', () => {
-			const prev = this.getPrev(10, true);
-			return indicators.getCandlePattern(		
-				prev.map(d => d.open),
-				prev.map(d => d.high),
-				prev.map(d => d.close),
-				prev.map(d => d.low)
-			);
-		})
+		const prev = this.getPrev(10, true);
+		return indicators.getCandlePattern(		
+			prev.map(d => d.open),
+			prev.map(d => d.high),
+			prev.map(d => d.close),
+			prev.map(d => d.low)
+		);
 	}
 
 	toString() {
@@ -229,13 +233,14 @@ module.exports = class Data {
 		});
 	}
 
-	static create(timestamp, low, open, close, high) {
+	static create(timestamp, low, open, close, high, volume) {
 		return new Data({
 			timestamp,
 			low,
 			open,
 			close,
-			high
+			high,
+			volume
 		});
 	}
 }

@@ -1,12 +1,15 @@
 
 const technicalindicators = require('technicalindicators');
 const { assert, ensure } = require('./assertion');
+const util = require('./util');
 const {
 	ATR,
 	SMA,
 	RSI,
 	WMA
 } = technicalindicators;
+
+
 
 const CANDLE_PATTERNS = {
 	// bullish: 20,
@@ -45,7 +48,7 @@ const CANDLE_PATTERNS = {
 	tweezerbottom: 5,
 };
 
-module.exports = {
+const indicators = module.exports = {
 
 	getSMA(values) {
 		ensure(values, Array);
@@ -152,8 +155,6 @@ module.exports = {
 			assert(fn != null, 'technicalindicators.' + name + ' must be defined.');
 
 			if (open.length < period) {
-				
-			console.log(name, period);
 				result[name] = 0;
 				continue;
 			}
@@ -206,6 +207,107 @@ module.exports = {
 		}
 
 		return result;
+	},
+
+	get(symbol, period, data) {
+
+		if (typeof symbol === 'string') {
+			assert(symbol in indicators.Symbols, 'Symbol must be defined: ' + symbol)
+			symbol = indicators.Symbols[symbol];
+		}
+		const func = technicalindicators[symbol.name];
+		let result = null;
+
+		try {
+			result = func.calculate({
+				period,
+				values: data.close,
+				rsiPeriod : period,
+				stochasticPeriod : period,
+				kPeriod : 3,
+				dPeriod : 3,
+				fastPeriod: Math.round(period / 4), // AwesomeOscillator, MACD
+				slowPeriod : period, // AwesomeOscillator, MACD
+				signalPeriod: period, // Stochastic, MACD
+				stdDev: .2, // BollingerBands
+				step: 0.02, // PSAR
+				max: 0.2, // PSAR
+				noOfBars: period, // VolumeProfile
+				...data
+			});
+			if (data.open.length > result.length) {
+				result.unshift(...new Array(data.open.length - result.length).fill(result[0]));
+			}
+			if (symbol.transform) {
+				result = symbol.transform(result);
+			}
+			//console.log(symbol, result.slice(0, 20));
+			return result;
+		}
+		catch(e) {
+			console.log({
+				error: e,
+				symbol,
+				period,
+				data,
+				result
+			});
+			throw 'Failed to .get(' + symbol.name + ', ' + period + ', [data]): ' + e.message;
+		}
+	},
+
+	getIndicators() {
+		return Object.keys(indicators.Symbols);
+	},
+
+	Symbols: {
+		SMA: { name: 'SMA' },
+		EMA: { name: 'EMA' },
+		WMA: { name: 'WMA' },
+		WEMA: { name: 'WEMA' },
+		RSI: { name: 'RSI' },
+		MACD: { name: 'MACD',
+			transform: result => result.map(k => [k.MACD, k.signal, k.histogram])
+		},
+		RSI: { name: 'RSI' },
+		BollingerBands: { 
+			name: 'BollingerBands',
+			transform: result => result.map(k => [k.middle, k.upper, k.lower, k.pb || 0])
+		 },
+		ADX: { 
+			name: 'ADX', 
+			transform: result => result.map(k => [k.adx || 0, k.pdi || 0, k.mdi || 0])
+		},
+		ATR: { name: 'ATR' },
+		TrueRange: { name: 'TrueRange' },
+		ROC: { name: 'ROC' },
+		PSAR: { name: 'PSAR' },
+		Stochastic: { 
+			name: 'Stochastic',
+			transform: result => result.map(({ k, d }) => [k, d])
+	 	},
+		WilliamsR: { name: 'WilliamsR' },
+		ADL: { name: 'ADL' },
+		OBV: { name: 'OBV' },
+		TRIX: { name: 'TRIX' },
+		ForceIndex: { name: 'ForceIndex' },
+		CCI: { name: 'CCI' },
+		AwesomeOscillator: { name: 'AwesomeOscillator' },
+		VWAP: { name: 'VWAP' },
+		VolumeProfile: { name: 'VolumeProfile' },
+		MFI: { name: 'MFI' },
+		StochasticRSI: { 
+			name: 'StochasticRSI', 
+			transform: (result) => result.map(k => [k.stochRSI, k.k, k.d])
+		},
+		AverageGain: { name: 'AverageGain' },
+		AverageLoss: { name: 'AverageLoss' },
+		SD: { name: 'SD' },
+		// Highest: { name: 'Highest' },
+		// Lowest: { name: 'Lowest' },
+		// Sum: { name: 'Sum' },
+		// HeikinAshi: { name: 'HeikinAshi' },
+		// IchimokuCloud: { name: 'IchimokuCloud' },
 	}
 
 };
