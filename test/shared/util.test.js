@@ -90,8 +90,8 @@ describe('util', () => {
         [1, [1]],
         [5, [1, 2, 3, 5]],
         
-    ])('.fibonacci(%p)', (max, expected) => {
-        expect(util.fibonacci(max)).toStrictEqual(expected);
+    ])('.fibonacciSequence(%p)', (max, expected) => {
+        expect(util.fibonacciSequence(max)).toStrictEqual(expected);
     });
 
     test.each([

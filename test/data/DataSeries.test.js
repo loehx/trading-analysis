@@ -41,7 +41,6 @@ test('.addData', () => {
 	])
 
 	expect(series.length).toBe(6);
-	expect(series.last.getSMA(6)).toBe(101.5);
 })
 
 test('.toShuffledArray', () => {

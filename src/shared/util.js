@@ -110,6 +110,20 @@ const util = module.exports = {
         return result;
     },
 
+    difference(arr, relation) {
+        const result = new Array(arr.length);
+        result.length = 0;
+
+        for (let i = 1; i < arr.length; i++) {
+            const val = arr[i];
+            const rel = relation[i];
+
+            result.push(val - rel);
+        }
+
+        return result;
+    },
+
     // scaleByMean(arr, period) {
     //     const result = new Array(arr.length);
     //     result.length = 0;
@@ -292,11 +306,19 @@ const util = module.exports = {
         })
     },
 
-    fibonacci(max) {
+    fibonacciSequence(max) {
         const seq = [];
         let pre = 0;
         for(let i = 1; i <= max; i += pre) {
             pre = i - pre;
+            seq.push(i);
+        }
+        return seq;
+    },
+
+    exponentialSequence(max) {
+        const seq = [];
+        for(let i = 1; i <= max; i *= 2) {
             seq.push(i);
         }
         return seq;

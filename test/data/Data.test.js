@@ -107,68 +107,6 @@ test('.getPrev()', () => {
 	expect(data.getPrev(10, false, true).length).toBe(10);
 })
 
-test('.getSMA()', () => {
-	const series = DataSeries.mock(10, 1, 'hour');
-	const data = series.get(5);
-	expect(data.getSMA(2)).toBe(6.5);
-	expect(data.getSMA(3)).toBe(6);
-	expect(data.getSMA(4)).toBe(5.5);
-	expect(series.last.getSMA(100)).toBe(6.5);
-})
-
-test('.getRSMA()', () => {
-	const series = DataSeries.mock(5, 1, 'hour');
-	expect(series.last.getRSMA(3)).toBe(0.25);
-	expect(series.last.getRSMA(3)).toBe(0.25);
-})
-
-test('.getWMA()', () => {
-	const series = DataSeries.mock(10, 1, 'hour');
-	const data = series.get(5);
-	expect(data.getWMA(2)).toBeCloseTo(6.666);
-	expect(data.getWMA(3)).toBeCloseTo(6.333);
-	expect(data.getWMA(4)).toBe(6);
-	expect(series.last.getWMA(100)).toBe(8);
-})
-
-test('.getRWMA()', () => {
-	const series = DataSeries.mock(5, 1, 'hour');
-	expect(series.last.getRWMA(3)).toBeCloseTo(0.23);
-	expect(series.last.getRWMA(3)).toBeCloseTo(0.23);
-})
-
-test('.getRSI()', () => {
-	const series = DataSeries.mock(10, 1, 'hour');
-	const data = series.get(5);
-	expect(data.getRSI(5)).toBe(100);
-	expect(data.getRSI(4)).toBe(100);
-	expect(data.getRSI(3)).toBe(100);
-	expect(data.getRSI(2)).toBe(100);
-	expect(data.getRSI(1)).toBe(0);
-	expect(series.last.getRSI(100)).toBe(100);
-})
-
-test('.getRRSI()', () => {
-	const series = DataSeries.mock(5, 1, 'hour');
-	expect(series.last.getRRSI(3)).toBe(0);
-})
-
-test('.getATR()', () => {
-	const series = DataSeries.mock(10, 1, 'hour');
-	const data = series.get(5);
-	expect(data.getATR(5)).toBe(3);
-	expect(data.getATR(4)).toBe(3);
-	expect(data.getATR(3)).toBe(3);
-	expect(data.getATR(2)).toBe(3);
-	expect(data.getATR(1)).toBe(3);
-	expect(series.last.getATR(100)).toBe(3);
-})
-
-test('.getRATR()', () => {
-	const series = DataSeries.mock(5, 1, 'hour');
-	expect(series.last.getRATR(3)).toBe(0);
-})
-
 test('.getCandlePattern()', () => {
 	const series = DataSeries.mock(5, 1, 'hour');
 	const pattern = series.last.getCandlePattern();

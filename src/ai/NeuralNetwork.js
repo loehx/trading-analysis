@@ -3,6 +3,7 @@ const { assert, ensure } = require('../shared/assertion');
 const { Log } = require('../shared/log');
 const util = require('../shared/util');
 const { round } = require('../shared/util');
+const { TradeOptions, Trade } = require('../trading');
 const NeuralNetworkBase = require('./NeuralNetworkBase')
 
 module.exports = class NeuralNetwork extends NeuralNetworkBase {
@@ -183,7 +184,7 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		return null;
 	}
 
-	getActualAccuracy(trainingData, validationData, minProbability) {
+	getActualAccuracy(trainingData, validationData, minProbability = 0.5) {
 
 		const predictions = this.predictBulk(validationData.map(k => k.x));
 
@@ -194,24 +195,25 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		for (let i = 0; i < predictions.length; i++) {
 
 			const pred = predictions[i];
-			const xy = trainingData[i];
 			const valXy = validationData[i];
-			valXy.prediction = new Array(pred.length);
+			valXy.prediction = pred;
+			valXy.validation = new Array(pred.length);
 
-			for (let n = 0; n < pred.length; n++) {
-				//console.log(i, n, pred, xy.y);
+			//xy.y[0] > .5 && console.log(i, pred, xy.y);
+			for (let n = 0; n < 1; n++) {
+
 				if (pred[n] < minProbability) {
 					skipped++;
-					valXy.prediction[n] = 0;
+					valXy.validation[n] = 0;
 					continue; // skip
 				}
-				if (xy.y[n]) {
+				if (valXy.y[n]) {
 					correct++;
-					valXy.prediction[n] = 1;
+					valXy.validation[n] = 1;
 				}
 				else {
 					incorrect++;
-					valXy.prediction[n] = -1;
+					valXy.validation[n] = -1;
 				}
 			}
 		}

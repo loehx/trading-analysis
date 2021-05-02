@@ -17,6 +17,9 @@ const plotting = module.exports = {
 	},
 
 	plot2d(...args) {
+		if (Array.isArray(args[0])) {
+			args = args[0];
+		}
 		args.forEach(options => {
 			// type: line, bar, scatter, scatter3d
 			const keys = Object.keys(options).filter(k => k !== 'x');
@@ -33,7 +36,7 @@ const plotting = module.exports = {
 						return;
 					}
 
-					const count = Math.min(y.length, options.max || 0);
+					const count = Math.min(y.length, options.max || Infinity);
 					let x = options.x || util.range(1, count);
 
 					if (y.length > options.max) {
