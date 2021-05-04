@@ -29,7 +29,7 @@ const util = module.exports = {
         const count = end - start;
         const result = new Array((count/step) + 1);
         for(let i = start; i <= end; i+=step) {
-            result[i - start] = i;
+            result[i - start] = util.round(i, 10);
         }
         return result;
     }

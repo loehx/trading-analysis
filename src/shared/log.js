@@ -56,11 +56,13 @@ class Log {
         }
     }
 
-    writeProgress(count, total, debounceMilliseconds = 2000) {
+    writeProgress(count, total, debounceMilliseconds = 2000, message) {
         const lastCall = new Date() - (this._lastprog || 0);
         if (lastCall <= debounceMilliseconds) {
             return;
         }
+
+        message = message ? message + ' ' : '';
 
         this._lastprog = new Date();
         const timer = this.timers[this.timers.length - 1];
@@ -68,10 +70,10 @@ class Log {
             const timePassed = new Date() - timer.start;
             const remaining = (timePassed / count) * (total - count);
 
-            this.write(`${count} of ${total} (${Math.round(count / total * 100)}%) after ${util.humanizeDuration(timePassed)} (remaining: ${util.humanizeDuration(remaining)})`);
+            this.write(`${message}${count} of ${total} (${Math.round(count / total * 100)}%) after ${util.humanizeDuration(timePassed)} (remaining: ${util.humanizeDuration(remaining)})`);
         }
         else {
-            this.write(`${count} of ${total} (${Math.round(count / total * 100)}%)`);
+            this.write(`${message}${count} of ${total} (${Math.round(count / total * 100)}%)`);
         }
     }
 

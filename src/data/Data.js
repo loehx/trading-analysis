@@ -106,6 +106,29 @@ module.exports = class Data {
 		return `[Data(${moment(timestamp).format()} ${open}o ${close}c ${low}l ${high}h)]`;
 	}
 
+	toTinyObject() {
+		return {
+			t: this.timestamp,
+			o: this.open,
+			c: this.close,
+			h: this.high,
+			l: this.low,
+			v: this.volume,
+		}
+	}
+
+	static deserialize(str) {
+		const [ type, timestamp, open, close, high, low, volume ] = str.split('-');
+		return new Data({
+			timestamp,
+			open,
+			close,
+			high,
+			low,
+			volume
+		})
+	}
+
 	toObject() {
 		const { timestamp, low, high, open, close, volume } = this;
 		return { 
@@ -161,6 +184,17 @@ module.exports = class Data {
 			high: random * 2,
 			open: random * 1.1,
 			close: random * 1.7,
+		});
+	}
+
+	static fromTinyObject({ t, o, c, h, l, v }) {
+		return new Data({
+			timestamp: t,
+			low: l,
+			open: o,
+			close: c,
+			high: h,
+			volume: v
 		});
 	}
 

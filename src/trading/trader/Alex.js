@@ -8,18 +8,11 @@ const { TradeOptions } = require("..");
 const { assert } = require("../../shared/assertion");
 const moment = require('moment');
 const Cache = require("../../shared/cache");
-const { maxBy, minBy, range, avgBy, flatten, scaleByMean, scaleByRelation, difference, scaleMinMax, crossJoinByProps, halfLife } = require("../../shared/util");
+const { maxBy, minBy, range, avgBy, flatten, scaleByMean, scaleByRelation, difference, scaleMinMax, crossJoinByProps, halfLife, reduceSpikes } = require("../../shared/util");
 const { slice } = require("@tensorflow/tfjs-core");
 const { plot2d, plot3d } = require("../../shared/plotting");
-const LSTMNetwork = require("../../ai/LSTMNetwork");
-const { startsWith } = require("lodash");
 const indicators = require("../../shared/indicators");
 
-class TrainingData {
-	constructor() {
-
-	}
-}
 
 module.exports = class Alex extends Trader {
 
@@ -36,7 +29,7 @@ module.exports = class Alex extends Trader {
 			inputActivation: 'leakyrelu', 
 			//inputUnits: 512, 
 			hiddenLayers: [
-				{ units: 160, activation: 'leakyrelu' },
+				// { units: 160, activation: 'leakyrelu' },
 				{ units: 80, activation: 'leakyrelu' },
 				{ units: 20, activation: 'leakyrelu' },
 		
@@ -51,7 +44,7 @@ module.exports = class Alex extends Trader {
 	async run() {
 		const training = await this.getTrainingData({
 			symbol: Symbols.EURUSD_HOURLY_HISTORICAL, 
-			limit: 80000, 
+			//limit: 80000, 
 			caching: true
 		});
 		const validation = await this.getTrainingData({
@@ -63,7 +56,7 @@ module.exports = class Alex extends Trader {
 		const iterator = this.nn1.train({
 			data: training.data,
 			validationData: validation.data,
-			epochs: 10,
+			epochs: 4,
 			minProbability: .6
 		})
 
@@ -73,14 +66,15 @@ module.exports = class Alex extends Trader {
 
 			plot2d(
 				{
-				x: validation.series.map(d => d.timestamp),
+				x: validation.series.map(d => d.index),
 				//'Profitable': validation.data.map(d => d.y[0]),
 				'Closing Price': validation.series.map(d => d.close),
-				'AI Profit': validation.data.map(d => d.prediction[0]),
-				'validation': validation.data.map(d => d.validation[0]),
+				'AI Prediction': validation.data.map(d => d.prediction[0]),
+				'Profitable': validation.data.map(d => d.y[0]),
+				//'Correct?': validation.data.map(d => d.validation[0]),
 				scaleMinMax: true
 			}, {
-				x: validation.series.map(d => d.timestamp),
+				x: validation.series.map(d => d.index),
 				'Profitable': validation.data.map(d => d.y[0]),
 				'Closing Price': validation.series.map(d => d.close),
 				//'AI Prediction': validation.data.map(d => d.prediction[0]),
@@ -128,7 +122,7 @@ module.exports = class Alex extends Trader {
 		const xs = periods.map((p, i) => {
 			const cols = this.getXs(p, series, context);
 			this.log.writeProgress(i, periods.length);
-			return cols.map(x => scaleMinMax(x));
+			return cols.map(x => scaleMinMax(reduceSpikes(x, 0.2)));
 		});
 
 		context = null;
@@ -171,29 +165,20 @@ module.exports = class Alex extends Trader {
 		const closedAboveBefore = (d, nBefore) => d.close > (series.get(d.index - nBefore)?.close || 0);
 		const closedBelowBefore = (d, nBefore) => d.close < (series.get(d.index - nBefore)?.close || 0);
 
-		// const options = crossJoinByProps({
-		// 	leverage: 10,
-		// 	stopLoss: 1,
-		// 	takeProfit: 1,
-		// 	maxDays: [3]
-		// }).map(TradeOptions.forEtoroIndices);
-
 		return [
-
-			//...options.map(o => scaleMinMax(series.map(d => new Trade(d, o).netProfit))),
-
 			scaleByMean(series.calculate(indicators.Symbols.SMA, period), 100),
-			scaleByMean(series.calculate(indicators.Symbols.WMA, period), 100),
-			scaleByMean(series.calculate(indicators.Symbols.ATR, period), 100),
-			scaleByMean(series.calculate(indicators.Symbols.TrueRange, period), 100),
-			series.calculate(indicators.Symbols.RSI, period),
-			//scaleMinMax(series.calculate(indicators.Symbols.Stochastic, period)),
+			// scaleByMean(series.calculate(indicators.Symbols.WMA, period), 100),
+			// scaleByMean(series.calculate(indicators.Symbols.ATR, period), 100),
+			//scaleByMean(series.calculate(indicators.Symbols.TrueRange, period), 100),
+			//series.calculate(indicators.Symbols.RSI, period),
+			// //scaleMinMax(series.calculate(indicators.Symbols.Stochastic, period)),
 
-			scaleByMean(series.calculate(indicators.Symbols.ADX, period), 50),
-			scaleByMean(series.calculate(indicators.Symbols.MACD, period).map(k => k), 100),
-			halfLife(series.map(d => closedAboveBefore(d, period) ? 1 : 0), .8),
-			halfLife(series.map(d => closedBelowBefore(d, period) ? 1 : 0), .8),
-			scaleByMean(series.map(d => d.progress), 100),
+			// scaleByMean(series.calculate(indicators.Symbols.ADX, period), 100),
+			// scaleByMean(series.calculate(indicators.Symbols.MACD, period).map(k => k), 100),
+			//halfLife(series.map(d => closedAboveBefore(d, period) ? 1 : 0), .8),
+			//halfLife(series.map(d => closedBelowBefore(d, period) ? 1 : 0), .8),
+			scaleByMean(series.map(d => d.progress), period),
+			scaleByMean(series.map(d => d.close), period),
 		];
 	}
 
@@ -204,7 +189,7 @@ module.exports = class Alex extends Trader {
 			leverage: 10,
 			stopLoss: 1,
 			takeProfit: 1,
-			maxDays: [5]
+			maxDays: [30]
 		}).map(TradeOptions.forEtoroIndices);
 		
 		return series.map(data => {

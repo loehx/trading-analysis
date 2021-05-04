@@ -74,6 +74,9 @@ const util = module.exports = {
             }
             min = 0;
         }
+        else if (max === 1 && min === 0) {
+            return arr; // no need to rescale
+        }
         const range = max - min;
         return arr.map(a => util.round((a - min) / range, 6));
     },
@@ -122,6 +125,25 @@ const util = module.exports = {
         }
 
         return result;
+    },
+
+    reduceSpikes(arr, factor = .2) {
+        arr = util.scaleMinMax(arr)
+        const avg = util.avg(arr);
+        const havg = util.avg(arr.filter(c => c > avg));
+        const lavg = util.avg(arr.filter(c => c < avg));
+        const maxavg = havg + (havg - avg);
+        const minavg = lavg - (avg - lavg);
+    
+        return arr.map(v => {
+            if (v > maxavg) {
+                return (v - maxavg) * factor + maxavg;
+            }
+            if (v < minavg) {
+                return (v - minavg) * factor + minavg;
+            }
+            return v;
+        })
     },
 
     // scaleByMean(arr, period) {
