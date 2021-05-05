@@ -348,5 +348,15 @@ const util = module.exports = {
 
     flatten(...args) {
         return _.flatten(...args);
+    },
+
+    getExamples(arr, n) {
+        if (arr.length <= n) {
+            return arr;
+        }
+        const a = Math.round(arr.length / n);
+        const examples = arr.filter((k,i) => i % a === 0);
+        examples.push(arr[arr.length - 1]);
+        return examples;
     }
 };

@@ -1,6 +1,7 @@
 const EventEmitter = require('events');
 const util = require('./util');
 const { ensure, assert } = require('./assertion');
+const cliProgress = require('cli-progress');
 
 class Log {
 
@@ -32,6 +33,10 @@ class Log {
     }
 
     stopTimer(message) {
+        if (this.progressBar) {
+            this.progressBar.stop();
+            this.progressBar = null;
+        }
         const timer = this.timers.pop();
         assert(timer, 'No timer found to stop.');
         const ms = new Date() - timer.start;
@@ -58,6 +63,19 @@ class Log {
 
     writeProgress(count, total, debounceMilliseconds = 2000, message) {
         const lastCall = new Date() - (this._lastprog || 0);
+
+        if (!this.progressBar) {
+            this.progressBar = new cliProgress.SingleBar({
+                barsize: 80
+            }, cliProgress.Presets.shades_classic);
+            this.progressBar.start(total, count);
+        }
+        else {
+            this.progressBar.update(count);
+        }
+
+        return;
+
         if (lastCall <= debounceMilliseconds) {
             return;
         }

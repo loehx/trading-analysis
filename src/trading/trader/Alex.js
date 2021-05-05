@@ -19,7 +19,7 @@ module.exports = class Alex extends Trader {
 	constructor(log) {
 		super();
 		this.log = new Log('Alex', log);
-		this.factory = new DataFactory(this.log);
+		this.factory = new DataFactory();
 		this.cache = new Cache('Alex')
 		this.nn1 = new NeuralNetwork({
 			id: 'alex-nn1',
@@ -29,9 +29,12 @@ module.exports = class Alex extends Trader {
 			inputActivation: 'leakyrelu', 
 			//inputUnits: 512, 
 			hiddenLayers: [
-				// { units: 160, activation: 'leakyrelu' },
+				{ units: 120, activation: 'leakyrelu' },
+				//{ dropout: .2 },
 				{ units: 80, activation: 'leakyrelu' },
+				//{ dropout: .2 },
 				{ units: 20, activation: 'leakyrelu' },
+				//{ units: 20, activation: 'leakyrelu' },
 		
 			], 
 			outputActivation: 'softmax', 
@@ -40,51 +43,77 @@ module.exports = class Alex extends Trader {
 		//await this.nn1.tryLoad();
 	}
 
-
 	async run() {
-		const training = await this.getTrainingData({
-			symbol: Symbols.EURUSD_HOURLY_HISTORICAL, 
-			//limit: 80000, 
-			caching: true
-		});
+		while(true) {
+			await this.trainOn({
+				symbols: [
+					// Symbols.AUDUSD_HOURLY_HISTORICAL,
+					// Symbols.EURAUD_HOURLY_HISTORICAL,
+					Symbols.EURCAD_HOURLY_HISTORICAL,
+					Symbols.EURGBP_HOURLY_HISTORICAL,
+					//Symbols.EURUSD_HOURLY_HISTORICAL
+				],
+				caching: true,
+				//limit: 2000
+			});
+
+			await this.evaluate({
+				symbol: Symbols.EURUSD_HOURLY,
+				limit: 2000,
+				caching: true,
+			})
+
+			// await this.evaluate({
+			// 	symbol: Symbols.NASDAQ_HOURLY,
+			// 	limit: 5000,
+			// })
+		}
+	}
+
+	async evaluate({ symbol, limit, caching }) {
+
 		const validation = await this.getTrainingData({
-			symbol: Symbols.EURUSD_HOURLY, 
-			limit: 2000, 
-			caching: true
+			symbol, 
+			limit,
+			caching
 		});
+
+		let prediction = this.nn1.predictBulk(validation.data.map(k => k.x));
+		prediction = util.transpose(prediction);
+
+		plot2d(
+			prediction.map((arr, i) => ({ 
+				x: validation.series.map(k => k.index),
+				Close: validation.series.map(k => k.close),
+				['Evaluation #' + i]: arr,
+				'Actual': validation.data.map(k => k.y[i]),
+				scaleMinMax: true
+			}))
+		)
+	}
+
+	async trainOn({ symbols, limit, caching}) {
+		let trainingData = [];
+
+		for (const symbol of symbols) {
+			const { series, data } = await this.getTrainingData({
+				symbol, 
+				limit: limit ?? limit / symbols.length, 
+				caching
+			});
+			trainingData = [ ...trainingData, ...data ];
+		}
 
 		const iterator = this.nn1.train({
-			data: training.data,
-			validationData: validation.data,
-			epochs: 4,
+			data: trainingData,
+			//validationData: validation.data,
+			validationSplit: .2,
+			epochs: 5,
 			minProbability: .6
 		})
 
 		for await (const status of iterator) {
-			//console.log(status);
-			//validation.data.forEach(d => console.log('AAA', d.prediction));
-
-			plot2d(
-				{
-				x: validation.series.map(d => d.index),
-				//'Profitable': validation.data.map(d => d.y[0]),
-				'Closing Price': validation.series.map(d => d.close),
-				'AI Prediction': validation.data.map(d => d.prediction[0]),
-				'Profitable': validation.data.map(d => d.y[0]),
-				//'Correct?': validation.data.map(d => d.validation[0]),
-				scaleMinMax: true
-			}, {
-				x: validation.series.map(d => d.index),
-				'Profitable': validation.data.map(d => d.y[0]),
-				'Closing Price': validation.series.map(d => d.close),
-				//'AI Prediction': validation.data.map(d => d.prediction[0]),
-				scaleMinMax: true
-			},
-			{
-				x: status.history.map(k => k.epochs),
-				'loss': status.history.map(k => k.loss),
-				'accuracy': status.history.map(k => k.accuracy),
-			});	
+			return;
 		}
 	}
 
@@ -95,15 +124,19 @@ module.exports = class Alex extends Trader {
 		this.log.write(`series received: ${series.toString()}`);
 
 		const getter = async () => {
-			const data = await this.getTrainingDataFromSeries(series);
+			let data = await this.getTrainingDataFromSeries(series);
+			data = data.slice(500);
+			series.clearCache();
 			return data.map(d => ({ i: d.index, x: d.x, y: d.y }));
 		};
 
 		const data = !caching ? await getter() : await this.cache.getCachedAsync(`${series.toString()}`, getter);
 		this.log.stopTimer('done!');
 
-		console.log('example: ', data[0]);
-		return { data, series };
+		return { 
+			data, 
+			series: new DataSeries(series.toArray(series.length - data.length)) 
+		};
 	}
 
 
@@ -112,13 +145,13 @@ module.exports = class Alex extends Trader {
 		this.log.startTimer('turn data into training data');
 
 		//const periods = util.exponentialSequence(2000);
-		const periods = util.fibonacciSequence(2000);
-		//const periods = util.range(1, 20, 1);
+		//const periods = util.fibonacciSequence(2000);
+		const periods = [ ...util.range(1, 30, 1), ...util.range(40, 100, 10), ...util.range(120, 500, 20) ];
 		const result = new Array(series.length);
 		result.length = 0;
 		let context = {};
 
-		this.log.startTimer('generate x by periods: ' + periods.join(', '))
+		this.log.startTimer('generate x by periods: ' + periods.slice(0, 5).join(', ') + ', ...')
 		const xs = periods.map((p, i) => {
 			const cols = this.getXs(p, series, context);
 			this.log.writeProgress(i, periods.length);
@@ -126,11 +159,11 @@ module.exports = class Alex extends Trader {
 		});
 
 		context = null;
-		this.log.stopTimer();
+		this.log.stopTimer('done!');
 
 		this.log.startTimer('generate y')
 		const y = this.getYs(series);
-		this.log.stopTimer();
+		this.log.stopTimer('done!');
 
 		const start = series.length - y.length;
 		const end = xs[0][0].length;
@@ -148,13 +181,15 @@ module.exports = class Alex extends Trader {
 			series.clearCache();
 		}
 
-		const chart = {};
-		result.forEach((xy, i) => {
-			if (i % Math.round(result.length / 10) === 0) {
-				chart['x #' + i] = xy.x;
-			}
-		})
-		plot2d(chart);
+		// plot2d({
+		// 	x: series.map(t => t.timestamp),
+		// 	...util.getExamples(result, 10).reduce((o,xy,i) => ({ ...o, ['x #' + i]: xy.x }), {})
+		// }, {
+		// 	x: series.map(t => t.timestamp),
+		// 	'close': series.closes,
+		// }, 
+		// util.getExamples(util.flatten(xs), 100).reduce((o,xy,i) => ({ ...o, ['x #' + i]: xy.slice(0, 100) }), {}),
+		// )
 
 		return result;
 
@@ -170,7 +205,7 @@ module.exports = class Alex extends Trader {
 			// scaleByMean(series.calculate(indicators.Symbols.WMA, period), 100),
 			// scaleByMean(series.calculate(indicators.Symbols.ATR, period), 100),
 			//scaleByMean(series.calculate(indicators.Symbols.TrueRange, period), 100),
-			//series.calculate(indicators.Symbols.RSI, period),
+			//scaleByMean(series.calculate(indicators.Symbols.RSI, period), 100),
 			// //scaleMinMax(series.calculate(indicators.Symbols.Stochastic, period)),
 
 			// scaleByMean(series.calculate(indicators.Symbols.ADX, period), 100),
@@ -189,14 +224,15 @@ module.exports = class Alex extends Trader {
 			leverage: 10,
 			stopLoss: 1,
 			takeProfit: 1,
-			maxDays: [30]
+			maxDays: [6]
 		}).map(TradeOptions.forEtoroIndices);
 		
-		return series.map(data => {
+		return series.map((data, i) => {
 			const trades = options.map(k => new Trade(data, k));
+			this.log.writeProgress(i, series.length);
 			return [
 				...trades.map(t => t.netProfit > 0),
-				...trades.map(t => t.netProfit < 0)
+				...trades.map(t => t.netProfit < 0),
 				// trade.profit > 0,
 				// trade.profit < 0,
 			].map(k => k ? 1 : 0)

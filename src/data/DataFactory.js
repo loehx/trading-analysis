@@ -70,6 +70,27 @@ module.exports = class DataFactory {
 		}
 	}
 
+	_fetchForexData(pair, options) {
+		const data = require('../../assets/data/' + pair + '.json');
+		const datasets = data.map(Data.fromTinyObject);
+		for (let i = 1; i < datasets.length; i++) {
+			const d = datasets[i];
+			let r = 1;
+			let p = datasets[i - r];
+			while(!p && r >= 0) {
+				p = datasets[i - ++r];
+			}
+			
+			const prog = d.close / p.close;
+
+			if (prog > 1.5 || prog < .5) {
+				this.log.write('filtered out dataset #' + i + ' due to its unusual values: ' + d.toString());
+				datasets[i] = null;
+			}	
+		}
+		return datasets.filter(k => k);
+	}
+
 	async _getCached(key, fn) {
 		if (typeof key === 'object') {
 			key = Object.values(key)
