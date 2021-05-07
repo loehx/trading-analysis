@@ -119,6 +119,9 @@ module.exports = class DataSeries {
 		if (count === 0) {
 			return [];
 		}
+		if (start < 0) {
+			start = this.data.length + start;
+		}
 		if (count < 0) {
 			return this.data.slice(start, this.data.length + count);	
 		}

@@ -235,8 +235,8 @@ const indicators = module.exports = {
 				noOfBars: period, // VolumeProfile
 				...data
 			});
-			if (data.open.length > result.length) {
-				result.unshift(...new Array(data.open.length - result.length).fill(result[0]));
+			if (data.close.length > result.length) {
+				result.unshift(...new Array(data.close.length - result.length).fill(result[0]));
 			}
 			if (symbol.transform) {
 				result = symbol.transform(result);

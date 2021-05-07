@@ -140,6 +140,9 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		const historyLog = [];
 
 		this._log(`Start training with ${data.length} datasets (in: ${inputCount} / out: ${outputCount})`);
+		if (validationData) {
+			this._log(`validation by ${validationData.length} datasets and minProbability: ${minProbability}`);
+		}
 		this._log(`#[epoch] [accuracy] / [loss] after [seconds]`)
 		while(!_stop) {
 			counter++;
@@ -152,7 +155,7 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 				validationData: val_xs ? [val_xs, val_ys] : undefined,
 			});
 
-			const validation = validationData ? this.getActualAccuracy(data, validationData, minProbability) : null;
+			const validation = validationData ? this.getValidationAccuracy(validationData, minProbability) : null;
 			const acc = (history.val_acc || history.acc);
 			const accuracy = round(validation?.accuracy || acc[acc.length - 1], 6) - (accuracyBaseLine || 0);
 			const loss = round(history.loss[history.loss.length - 1], 6);
@@ -184,7 +187,7 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		return null;
 	}
 
-	getActualAccuracy(trainingData, validationData, minProbability = 0.5) {
+	getValidationAccuracy(validationData, minProbability = 0.5) {
 
 		const predictions = this.predictBulk(validationData.map(k => k.x));
 
@@ -200,7 +203,7 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 			valXy.validation = new Array(pred.length);
 
 			//xy.y[0] > .5 && console.log(i, pred, xy.y);
-			for (let n = 0; n < 1; n++) {
+			for (let n = 0; n < pred.length; n++) {
 
 				if (pred[n] < minProbability) {
 					skipped++;
@@ -223,7 +226,8 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 			correct,
 			incorrect,
 			sum: correct + incorrect,
-			skipped
+			skipped,
+			predictions
 		};
 	}
 

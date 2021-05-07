@@ -3,36 +3,27 @@ const DataSeries = require("./DataSeries");
 const SYMBOLS = {
 	NASDAQ_HOURLY_HISTORICAL: {
 		name: 'NASDAQ_HOURLY_HISTORICAL',
-		getter: async (factory, options) => {
-			return await factory._fetchBacktestMarketData('NASDAQ_HOURLY', options);
-		}
+		getter: async (factory, options) => factory._fetchBacktestMarketData('NASDAQ_HOURLY', options)
 	},
-	NASDAQ_HOURLY: {
-		name: 'NASDAQ_HOURLY',
-		getter: async (factory, options) => {
-			return await factory._fetchTwelveData({
-				...options,
-				symbol: 'NDX',
-				interval: '1h'
-			});
-		}
-	},
-	EURUSD_HOURLY_HISTORICAL: {
-		name: 'EURUSD_HOURLY_HISTORICAL',
-		getter: async (factory, options) => {
-			return await factory._fetchBacktestMarketData('EURUSD_HOURLY', options);
-		}
-	},
-	EURUSD_HOURLY: {
-		name: 'EURUSD_HOURLY',
-		getter: async (factory, options) => {
-			return await factory._fetchTwelveData({
-				...options,
-				symbol: 'EUR/USD',
-				interval: '1h'
-			});
-		}
-	},
+
+	// CRYPTO
+	BITCOIN_HOURLY: { name: 'BITCOIN_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('BTC/USD', options) },
+
+	// STOCKS
+	MASTERCARD_HOURLY: { name: 'MASTERCARD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('MA', options) },
+	GOOGLE_HOURLY: { name: 'GOOGLE_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('GOOGL', options) },
+	APPLE_HOURLY: { name: 'APPLE_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('AAPL', options) },
+	MICROSOFT_HOURLY: { name: 'MICROSOFT_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('MSFT', options) },
+
+	// INDICES
+	NASDAQ_HOURLY: { name: 'NASDAQ_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('NDX', options) },
+	CHINAA50_HOURLY: { name: 'CHINAA50_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('AFTY', options) },
+	SNP500_HOURLY: { name: 'SNP500_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('SPY', options) },
+
+	// FOREX
+	EURUSD_HOURLY: { name: 'EURUSD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('EUR/USD', options) },
+	AUDUSD_HOURLY: { name: 'AUDUSD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('AUD/USD', options) },
+	EURAUD_HOURLY: { name: 'EURAUD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('EUR/AUD', options) },
 
 	EURUSD_HOURLY_HISTORICAL: { name: 'EURUSD_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('EURUSD', options) },
 	EURCHF_HOURLY_HISTORICAL: { name: 'EURCHF_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('EURCHF', options) },

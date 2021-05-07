@@ -50,6 +50,14 @@ module.exports = class DataFactory {
 		return datasets;
 	}
 
+	async _fetchTwelveDataHourly(symbol, options) {
+		return await this._fetchTwelveData({
+			...options,
+			symbol,
+			interval: '1h'
+		})
+	}
+
 	async _fetchTwelveData(options) {
 		ensure(options, Object);
 		//this.log.write(`fetch data from TwelveData: ${options.symbol} ${options.interval} ...`, options);

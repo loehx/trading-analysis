@@ -69,10 +69,7 @@ const util = module.exports = {
         }
 
         if (max === min) {
-            if (min === 0) {
-                return new Array(arr.length).fill(0);
-            }
-            min = 0;
+            return new Array(arr.length).fill(max);
         }
         else if (max === 1 && min === 0) {
             return arr; // no need to rescale

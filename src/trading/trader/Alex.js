@@ -29,12 +29,11 @@ module.exports = class Alex extends Trader {
 			inputActivation: 'leakyrelu', 
 			//inputUnits: 512, 
 			hiddenLayers: [
-				{ units: 120, activation: 'leakyrelu' },
-				//{ dropout: .2 },
+				{ dropout: .2 },
+				{ units: 160, activation: 'leakyrelu' },
+				{ dropout: .2 },
 				{ units: 80, activation: 'leakyrelu' },
-				//{ dropout: .2 },
 				{ units: 20, activation: 'leakyrelu' },
-				//{ units: 20, activation: 'leakyrelu' },
 		
 			], 
 			outputActivation: 'softmax', 
@@ -44,33 +43,31 @@ module.exports = class Alex extends Trader {
 	}
 
 	async run() {
+
+		this.config = {
+			minProbability: .6,
+			daysToPredict: 1,
+			reduceSpikesFactor: .2,
+		};
+
 		while(true) {
+
 			await this.trainOn({
 				symbols: [
-					// Symbols.AUDUSD_HOURLY_HISTORICAL,
-					// Symbols.EURAUD_HOURLY_HISTORICAL,
-					Symbols.EURCAD_HOURLY_HISTORICAL,
-					Symbols.EURGBP_HOURLY_HISTORICAL,
-					//Symbols.EURUSD_HOURLY_HISTORICAL
+					Symbols.GBPUSD_HOURLY_HISTORICAL,
 				],
-				caching: true,
-				//limit: 2000
+				//limit: 10000,
+				epochs: 10, 
 			});
 
 			await this.evaluate({
-				symbol: Symbols.EURUSD_HOURLY,
-				limit: 2000,
-				caching: true,
+				symbol: Symbols.EURAUD_HOURLY,
+				limit: 1500,
 			})
-
-			// await this.evaluate({
-			// 	symbol: Symbols.NASDAQ_HOURLY,
-			// 	limit: 5000,
-			// })
 		}
 	}
 
-	async evaluate({ symbol, limit, caching }) {
+	async evaluate({ symbol, limit, caching = true }) {
 
 		const validation = await this.getTrainingData({
 			symbol, 
@@ -78,48 +75,58 @@ module.exports = class Alex extends Trader {
 			caching
 		});
 
-		let prediction = this.nn1.predictBulk(validation.data.map(k => k.x));
-		prediction = util.transpose(prediction);
+		const { minProbability, daysToPredict } = this.config;
+		let { predictions, accuracy } = this.nn1.getValidationAccuracy(validation.data, minProbability);
+		predictions = util.transpose(predictions);
+
+		const titles = [
+			`Trades running ${daysToPredict}-days would be profitable`,
+			`Contradicting Prediction (Should be the opposite)`
+		];
 
 		plot2d(
-			prediction.map((arr, i) => ({ 
-				x: validation.series.map(k => k.index),
-				Close: validation.series.map(k => k.close),
-				['Evaluation #' + i]: arr,
+			predictions.map((arr, i) => ({ 
+				x: validation.series.map(k => k.index + ' ' + moment(k.timestamp).format('DD.MM.YYYY HH:mm')),
+				Close: scaleMinMax(validation.series.map(k => k.close)),
+				'Probability (AI)': arr,
 				'Actual': validation.data.map(k => k.y[i]),
-				scaleMinMax: true
+				'Min. Probability': () => minProbability,
+				title: `${symbol.name}: ${titles[i]} (accuracy: ${util.round(accuracy, 2)})`
 			}))
 		)
 	}
 
-	async trainOn({ symbols, limit, caching}) {
+	async trainOn({ symbols, limit, caching = true, epochs }) {
 		let trainingData = [];
 
 		for (const symbol of symbols) {
 			const { series, data } = await this.getTrainingData({
 				symbol, 
-				limit: limit ?? limit / symbols.length, 
+				limit: limit && limit / symbols.length, 
 				caching
 			});
+			series.clearCache();
 			trainingData = [ ...trainingData, ...data ];
 		}
 
+		const { minProbability } = this.config;
 		const iterator = this.nn1.train({
 			data: trainingData,
-			//validationData: validation.data,
-			validationSplit: .2,
-			epochs: 5,
-			minProbability: .6
+			validationSplit: .1,
+			epochs: Math.ceil(epochs/5),
+			minProbability,
 		})
 
 		for await (const status of iterator) {
-			return;
+			if (status.accuracy > minProbability || status.epochs >= epochs) {
+				return status;
+			}
 		}
 	}
 
 	async getTrainingData({ symbol, limit, caching }) {
 
-		this.log.startTimer(`.getTrainingData(${symbol.name}, limit = ${symbol.limit}, caching = ${caching})`);
+		this.log.startTimer(`.getTrainingData(${symbol.name}, limit = ${limit}, caching = ${caching})`);
 		const series = await this.factory.getDataSeries(symbol, { limit });
 		this.log.write(`series received: ${series.toString()}`);
 
@@ -131,11 +138,12 @@ module.exports = class Alex extends Trader {
 		};
 
 		const data = !caching ? await getter() : await this.cache.getCachedAsync(`${series.toString()}`, getter);
-		this.log.stopTimer('done!');
+		const skip = series.length - data.length;
+		this.log.stopTimer(`done! ...skip the first ${skip} of ${series.length}`);
 
 		return { 
 			data, 
-			series: new DataSeries(series.toArray(series.length - data.length)) 
+			series: new DataSeries(series.toArray(skip)) 
 		};
 	}
 
@@ -146,16 +154,18 @@ module.exports = class Alex extends Trader {
 
 		//const periods = util.exponentialSequence(2000);
 		//const periods = util.fibonacciSequence(2000);
-		const periods = [ ...util.range(1, 30, 1), ...util.range(40, 100, 10), ...util.range(120, 500, 20) ];
+		//const periods = [ ...util.range(30, 100, 10), ...util.range(120, 500, 20) ];
+		const periods = [ 1, 2, 4, 8, 16, 32, 64, 128, 200, 300, 400, 500 ];
 		const result = new Array(series.length);
 		result.length = 0;
 		let context = {};
 
 		this.log.startTimer('generate x by periods: ' + periods.slice(0, 5).join(', ') + ', ...')
+		const { reduceSpikesFactor } = this.config;
 		const xs = periods.map((p, i) => {
 			const cols = this.getXs(p, series, context);
 			this.log.writeProgress(i, periods.length);
-			return cols.map(x => scaleMinMax(reduceSpikes(x, 0.2)));
+			return cols.map(x => scaleMinMax(reduceSpikes(x, reduceSpikesFactor)));
 		});
 
 		context = null;
@@ -181,15 +191,17 @@ module.exports = class Alex extends Trader {
 			series.clearCache();
 		}
 
-		// plot2d({
-		// 	x: series.map(t => t.timestamp),
-		// 	...util.getExamples(result, 10).reduce((o,xy,i) => ({ ...o, ['x #' + i]: xy.x }), {})
-		// }, {
-		// 	x: series.map(t => t.timestamp),
-		// 	'close': series.closes,
-		// }, 
-		// util.getExamples(util.flatten(xs), 100).reduce((o,xy,i) => ({ ...o, ['x #' + i]: xy.slice(0, 100) }), {}),
-		// )
+		plot2d({
+			x: series.map(t => t.timestamp),
+			...util.getExamples(result, 10).reduce((o,xy,i) => ({ ...o, ['x #' + i]: xy.x }), {})
+		}, {
+			x: series.map(t => t.timestamp),
+			'close': series.closes,
+		}, 
+		util.getExamples(util.flatten(xs), 100).reduce((o,xy,i) => ({ ...o, ['x #' + i]: xy.slice(0, 1000) }), {}),
+		)
+
+		this.log.stopTimer('done');
 
 		return result;
 
@@ -200,20 +212,36 @@ module.exports = class Alex extends Trader {
 		const closedAboveBefore = (d, nBefore) => d.close > (series.get(d.index - nBefore)?.close || 0);
 		const closedBelowBefore = (d, nBefore) => d.close < (series.get(d.index - nBefore)?.close || 0);
 
-		return [
-			scaleByMean(series.calculate(indicators.Symbols.SMA, period), 100),
-			// scaleByMean(series.calculate(indicators.Symbols.WMA, period), 100),
-			// scaleByMean(series.calculate(indicators.Symbols.ATR, period), 100),
-			//scaleByMean(series.calculate(indicators.Symbols.TrueRange, period), 100),
-			//scaleByMean(series.calculate(indicators.Symbols.RSI, period), 100),
-			// //scaleMinMax(series.calculate(indicators.Symbols.Stochastic, period)),
+		const shifted = [...series.toArray(period), ...series.toArray(-period)];
 
+		// period % 100 === 0 && plot2d({
+		// 	shifted: shifted.map(k => k.close),
+		// 	closes: series.toArray().map(k => k.close),
+		// 	diff: util.difference(series.closes, shifted.map(k => k.close)),
+		// 	scaleMinMax: true
+		// });
+
+		return [
+			scaleByMean(util.difference(series.closes, shifted.map(k => k.close)), 500),
+			// indicators.get(indicators.Symbols.WMA, period, {
+			// 	close: scaleByMean(series.closes, 500)
+			// }),
+
+			//scaleByMean(series.calculate(indicators.Symbols.SMA, period), 100),
+			// scaleByMean(series.calculate(indicators.Symbols.WMA, period), 100),
+			//scaleByMean(series.calculate(indicators.Symbols.ATR, period), 100),
+			//scaleByMean(series.calculate(indicators.Symbols.TrueRange, period), 100),
+			//series.calculate(indicators.Symbols.RSI, period),
+			// //scaleMinMax(series.calculate(indicators.Symbols.Stochastic, period)),
+			
 			// scaleByMean(series.calculate(indicators.Symbols.ADX, period), 100),
-			// scaleByMean(series.calculate(indicators.Symbols.MACD, period).map(k => k), 100),
-			//halfLife(series.map(d => closedAboveBefore(d, period) ? 1 : 0), .8),
-			//halfLife(series.map(d => closedBelowBefore(d, period) ? 1 : 0), .8),
-			scaleByMean(series.map(d => d.progress), period),
-			scaleByMean(series.map(d => d.close), period),
+			//series.calculate(indicators.Symbols.MACD, period).map(k => k[0] || 0),
+			// series.calculate(indicators.Symbols.AwesomeOscillator, period).map(k => k[0] || 0),
+			// halfLife(series.map(d => closedAboveBefore(d, period) ? 1 : 0), .8),
+			// halfLife(series.map(d => closedBelowBefore(d, period) ? 1 : 0), .8),
+			// scaleByMean(series.map(d => d.progress), period),
+			// scaleByMean(series.map(d => d.close), period),
+			// scaleByMean(series.map(d => d.high - d.low), period),
 		];
 	}
 
@@ -224,8 +252,8 @@ module.exports = class Alex extends Trader {
 			leverage: 10,
 			stopLoss: 1,
 			takeProfit: 1,
-			maxDays: [6]
-		}).map(TradeOptions.forEtoroIndices);
+			maxDays: [this.config.daysToPredict]
+		}).map(TradeOptions.forEtoroForex);
 		
 		return series.map((data, i) => {
 			const trades = options.map(k => new Trade(data, k));

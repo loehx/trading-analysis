@@ -35,18 +35,18 @@ const plotting = module.exports = {
 					if (!Array.isArray(y)) {
 						return;
 					}
-
+	
 					const count = Math.min(y.length, options.max || Infinity);
 					let x = options.x || util.range(1, count);
-
+	
 					if (y.length > options.max) {
 						y = y.slice(y.length - options.max);
 					}
-
+	
 					if (options.scaleMinMax) {
 						y = util.scaleMinMax(y, true);
 					}
-
+	
 					return {
 						x,
 						y,
@@ -55,7 +55,10 @@ const plotting = module.exports = {
 						text: labels,
 						name: k
 					};
-				}).filter(k => k)
+				}).filter(k => k),
+				{
+					title: options.title
+				}
 			);
 		});
 		plot();
@@ -78,7 +81,9 @@ const plotting = module.exports = {
 					type: 'surface',
 					title: options.title,
 				}
-			]);
+			], {
+				title: options.title
+			});
 		})
 		
 		plot();

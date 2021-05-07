@@ -64,7 +64,7 @@ module.exports = class TradeOptions {
 		maxDays: Infinity
 	}
 
-	static etoroIndices = {
+	static ETORO_INDICES = {
 		nightlyCost: 0.00008,
 		spread: 0.00017, // TODO: PRÜFEN
 		stopLoss: 0.5,
@@ -73,7 +73,21 @@ module.exports = class TradeOptions {
 
 	static forEtoroIndices(options) {
 		return new TradeOptions({
-			...TradeOptions.etoroIndices,
+			...TradeOptions.ETORO_INDICES,
+			...options
+		});
+	}
+
+	static ETORO_FOREX = {
+		nightlyCost: 0.000051,
+		spread: 0.00008, // TODO: PRÜFEN
+		stopLoss: 0.5,
+		takeProfit: 0.5,
+	}
+
+	static forEtoroForex(options) {
+		return new TradeOptions({
+			...TradeOptions.ETORO_FOREX,
 			...options
 		});
 	}
