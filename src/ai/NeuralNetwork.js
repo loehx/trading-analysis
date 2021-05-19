@@ -16,18 +16,29 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 		inputUnits, 
 		outputActivation, 
 		hiddenLayers = [], 
+		learningRate,
 		log
 	}) {
 		super({
 			id,
 			log: new Log('NeuralNetwork', log)
 		})
-		this.optimizer = optimizer;
+		this.optimizerName = optimizer;
 		this.loss = loss;
 		this.hiddenLayers = hiddenLayers;
 		this.inputUnits = inputUnits;
 		this.inputActivation = inputActivation;
 		this.outputActivation = outputActivation;
+		this.learningRate = learningRate;
+	}
+
+	get optimizer() {
+		if (this.learningRate) {
+			return tf.train[this.optimizerName](this.learningRate);
+		}
+		else {
+			return this.optimizerName;
+		}
 	}
 
 	async _getModel(inputCount, outputCount) {
@@ -210,7 +221,7 @@ module.exports = class NeuralNetwork extends NeuralNetworkBase {
 					valXy.validation[n] = 0;
 					continue; // skip
 				}
-				if (valXy.y[n]) {
+				if (valXy.y[n] > .5) {
 					correct++;
 					valXy.validation[n] = 1;
 				}

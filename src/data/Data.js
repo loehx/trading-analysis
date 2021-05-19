@@ -65,7 +65,7 @@ module.exports = class Data {
 			const s = includeSelf ? 1 : 0;
 			const start = this.index - n + s;
 			const result = this.dataSeries.toArray(Math.max(start, 0), start < 0 ? n + start : n);
-			if (padding) {
+			if (padding && result.length < n) {
 				return new Array(n - this.index).fill(null).concat(result);
 			}
 			return result;
@@ -78,11 +78,19 @@ module.exports = class Data {
 			const s = includeSelf ? 1 : 0;
 			const start = this.index + s;
 			const result = this.dataSeries.toArray(start, n);
-			if (padding) {
+			if (padding && result.length < n) {
 				return [ ...result, ...new Array(n - this.index).fill(null)];
 			}
 			return result;
 		//})
+	}
+
+	clone(keepAttached = true) {
+		const n = new Data(this);
+		if (keepAttached && this.dataSeries) {
+			n._attachTo(this.dataSeries, this.index);
+		}
+		return n;
 	}
 
 	calculate(name, period) {

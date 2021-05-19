@@ -9,24 +9,36 @@ module.exports = class TradeOptions {
 		const {
 			takeProfit,
 			stopLoss,
+			fixedTakeProfit,
+			fixedStopLoss,
 			direction,
 			spread,
 			leverage,
 			nightlyCost,
-			maxDays
+			maxDays,
+			noFutureAwareness
 		} = {
 			...TradeOptions.defaultOptions,
 			...options
 		}
 
-		ensure(takeProfit, Number);
-		assert(() => takeProfit > 0);
-		this.takeProfit = round(takeProfit, 3);
+		if (fixedTakeProfit) {
+			this.fixedTakeProfit = fixedTakeProfit;
+		}
+		else {
+			ensure(takeProfit, Number);
+			assert(() => takeProfit > 0);
+			this.takeProfit = round(takeProfit, 3);
+		}
 
-		ensure(stopLoss, Number);
-		assert(() => stopLoss <= 1);
-		assert(() => stopLoss > 0);
-		this.stopLoss = round(stopLoss, 3);
+		if (fixedStopLoss) {
+			this.fixedStopLoss = fixedStopLoss;
+		} else {
+			ensure(stopLoss, Number);
+			assert(() => stopLoss <= 1);
+			assert(() => stopLoss > 0);
+			this.stopLoss = round(stopLoss, 3);
+		}
 
 		ensure(direction, ['long', 'short']);
 		this.direction = direction;
@@ -46,6 +58,8 @@ module.exports = class TradeOptions {
 		ensure(maxDays, Number);
 		assert(() => maxDays >= 0);
 		this.maxDays = maxDays;
+
+		this.noFutureAwareness = noFutureAwareness;
 
 		Object.freeze(this);
 	}

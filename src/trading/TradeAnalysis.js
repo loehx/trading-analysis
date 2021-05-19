@@ -1,9 +1,9 @@
 const { DataSeries, DataFactory, Symbols } = require("../data");
 const { ensure, assert } = require("../shared/assertion");
-const { crossJoinByProps, avgBy, maxBy, minBy, sumBy, range, round, humanizeDuration } = require("../shared/util");
+const { crossJoinByProps, avgBy, maxBy, minBy, sumBy, range, round, humanizeDuration, scaleMinMax } = require("../shared/util");
 const { TradeOptions, Trade } = require(".");
 const { Log } = require("../shared/log");
-const { plotLines, plotScatter, plotData } = require("../shared/plotting");
+const { plotLines, plotScatter, plotData, plot2d } = require("../shared/plotting");
 
 module.exports = class TradeAnalysis {
 
@@ -18,7 +18,7 @@ module.exports = class TradeAnalysis {
 			limit: 1000
 		});
 
-		// plotData({
+		// plot2d({
 		// 	x: series.map(s => s.timestamp),
 		// 	'rsi': series.map(k => k.getRSI(40)),
 		// 	'close': series.map(k => k.close),
@@ -27,7 +27,7 @@ module.exports = class TradeAnalysis {
 		// 	scaleMinMax: true
 		// 	//'trades': statistic.map(k => k.trades).map(k => k/100),
 		// })
-		// return;
+
 
 		this.log.write(`creating statistic for ${symbol.name} options with ${series.length} data points ...`);
 		let statistic = this._createStatistic(series, {
@@ -41,19 +41,33 @@ module.exports = class TradeAnalysis {
 		this.log.write('statistic created successfully');
 		this.log.write('---- ' + symbol.name + ' -----------------------------');
 
-		statistic = statistic.filter(k => k.profit > 0);
+		//statistic = statistic.filter(k => k.profit > 0);
 
-		plotData({
-			'labels': statistic.map(k => k.summary),
-			'per day': statistic.map(k => k.profit_per_day),
-			'profit': statistic.map(k => k.profit),
+		plot2d(...statistic.map(stat => ({
+			x: series.map(k => k.toString()),
+			title: stat.summary,
+			series: series.toArray(),
+			buySignals: stat.buySignals,
 			scaleMinMax: true,
+			ema25: series.calculate('EMA', 25),
+			ema50: series.calculate('EMA', 50),
+			ema100: series.calculate('EMA', 100),
+			// ema25: scaleByMean(series.calculate('EMA', 25), 25),
+			// ema50: scaleByMean(series.calculate('EMA', 50), 50),
+			// ema100: scaleByMean(series.calculate('EMA', 100), 100),
+		})))
+
+		plot2d({
+			//'labels': statistic.map(k => k.summary),
+			//'per day': statistic.map(k => k.profit_per_day),
+			'profit': statistic.map(k => k.profit),
+			//scaleMinMax: true,
 			type: 'bar',
 			mode: 'markers'
 			//'trades': statistic.map(k => k.trades).map(k => k/100),
 		})
 
-		//statistic.map(k => k.summary).forEach(k => this.log.write(k));
+		statistic.map(k => k.summary).forEach(k => this.log.write(k));
 
 		return statistic;
 	}
@@ -74,6 +88,7 @@ module.exports = class TradeAnalysis {
 
 			const tradeOptions = new TradeOptions(testOption);
 			const trades = [];
+			const buySignals = [];
 
 			this.log.startTimer(`#${no++} of ${testOptions.length}`);
 
@@ -82,13 +97,15 @@ module.exports = class TradeAnalysis {
 				const data = dataSeries.get(i);
 
 				if (testOption.buyIndicator && !testOption.buyIndicator(data)) {
+					buySignals.push(0);
 					continue;
 				}
 
+				buySignals.push(1);
 				const trade = new Trade(data, tradeOptions);
-				if (trade.isClosed) {
-					i = trade.closedAt.index;
-				}
+				// if (trade.isClosed) {
+				// 	i = trade.closedAt.index;
+				// }
 				trade.__profit = trade.netProfit;
 				trades.push(trade);
 			}
@@ -97,6 +114,7 @@ module.exports = class TradeAnalysis {
 			// this.log.startTimer(`evaluate ${dataSeries.length} trades`);
 
 			const evaluation = {
+				buySignals,
 				profit: sumBy(trades, t => t.__profit),
 				profit_per_day: sumBy(trades, t => t.__profit) / sumBy(trades, t => t.daysOpen),
 				//profitable_trades: trades.filter(t => t.__profit > 0).length,
@@ -118,7 +136,7 @@ module.exports = class TradeAnalysis {
 				(evaluation.profit > 0 ? '+' : '') + evaluation.profit.toFixed(3),
 				(evaluation.profit_per_day > 0 ? '+' : '') + evaluation.profit_per_day.toFixed(3),
 				tradeOptions.toString(),
-				testOption.buyIndicator.toString(),
+				//testOption.buyIndicator.toString(),
 				trades.length + ' trades'
 			].join('\t');
 

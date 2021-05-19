@@ -36,6 +36,8 @@ module.exports = class TwelveData {
 		const result = (await axios(request)).data;
 
 		if (result.status === 'error') {
+			console.log('request', request)
+			console.log('result', result)
 			this.log.error(`... error: ${result.message}`, result);
 			return null;
 		}

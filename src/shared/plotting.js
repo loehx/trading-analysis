@@ -1,4 +1,5 @@
 const { plot, Plot, stack } = require('nodeplotlib');
+const { scaleMinMax } = require('./util');
 const util = require('./util');
 
 const plotting = module.exports = {
@@ -35,13 +36,38 @@ const plotting = module.exports = {
 					if (!Array.isArray(y)) {
 						return;
 					}
-	
+
 					const count = Math.min(y.length, options.max || Infinity);
 					let x = options.x || util.range(1, count);
 	
 					if (y.length > options.max) {
 						y = y.slice(y.length - options.max);
 					}
+
+					if (typeof y[0] === 'object' && 'open' in y[0] && 'close' in y[0]) {
+						let values = [
+							...y.map(a => a.open),
+							...y.map(a => a.close),
+							...y.map(a => a.low),
+							...y.map(a => a.high),
+						]
+						if (options.scaleMinMax) {
+							values = scaleMinMax(values);
+						}
+						return {
+							x,
+							open: values.slice(0, y.length),
+							close: values.slice(y.length, y.length*2),
+							low: values.slice(y.length*2, y.length*3),
+							high: values.slice(y.length*3),
+							type: 'candlestick',
+							//mode: options.mode,
+							text: labels,
+							name: k
+							
+						};
+					}
+	
 	
 					if (options.scaleMinMax) {
 						y = util.scaleMinMax(y, true);
@@ -57,7 +83,12 @@ const plotting = module.exports = {
 					};
 				}).filter(k => k),
 				{
-					title: options.title
+					title: options.title,
+					xaxis: {
+						rangeslider: {
+							visible: false
+						}
+					}
 				}
 			);
 		});

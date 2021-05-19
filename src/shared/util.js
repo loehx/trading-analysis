@@ -110,6 +110,33 @@ const util = module.exports = {
         return result;
     },
 
+    movingAverage(arr, period) {
+        const result = new Array(arr.length);
+        result.length = 0;
+
+        period = Math.min(period, arr.length);
+
+        result.push(arr[0]);
+
+        for (let i = 1; i < arr.length; i++) {
+            let avg = 0;
+            let counter = 0;
+
+            const pStart = Math.max(i - period, 1);
+            const pEnd = i;
+
+            for (let p = pStart; p <= pEnd; p++) {
+                const v = arr[p];
+                avg += v;
+                counter++;
+            }
+
+            avg = avg / counter;
+            result.push(util.round(avg, 6));
+        }
+        return result;
+    },
+
     difference(arr, relation) {
         const result = new Array(arr.length);
         result.length = 0;
@@ -335,10 +362,13 @@ const util = module.exports = {
         return seq;
     },
 
-    exponentialSequence(max) {
+    exponentialSequence(max, multiplier = 2) {
         const seq = [];
-        for(let i = 1; i <= max; i *= 2) {
-            seq.push(i);
+        for(let i = 1; i <= max; i *= multiplier) {
+            const val = Math.round(i);
+            if (seq[seq.length - 1] !== val) {
+                seq.push(val);
+            }
         }
         return seq;
     },

@@ -30,8 +30,14 @@ module.exports = class DataFactory {
 		assert(() => symbol.getter);
 		this.log.startTimer('.getDataSeries(' + symbol.name + ', ' + JSON.stringify(options) +')')
 		let data = await symbol.getter(this, options);
-		if (options && options.limit && data && data.length > options.limit) {
-			data = data.slice(data.length - options.limit);
+		if (options) {
+			if (options.limit && data && data.length > options.limit) {
+				data = data.slice(data.length - options.limit);
+			}
+			if (options.to && data) {
+				const to = moment(options.to);
+				data = data.filter(d => moment(d.timestamp) < to);
+			}
 		}
 		const dataSeries = DataSeries.fromRawData(data);
 		this.log.stopTimer();

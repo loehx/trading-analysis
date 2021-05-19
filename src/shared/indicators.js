@@ -215,6 +215,7 @@ const indicators = module.exports = {
 			assert(symbol in indicators.Symbols, 'Symbol must be defined: ' + symbol)
 			symbol = indicators.Symbols[symbol];
 		}
+
 		const func = technicalindicators[symbol.name];
 		let result = null;
 
@@ -235,6 +236,7 @@ const indicators = module.exports = {
 				noOfBars: period, // VolumeProfile
 				...data
 			});
+
 			if (data.close.length > result.length) {
 				result.unshift(...new Array(data.close.length - result.length).fill(result[0]));
 			}
@@ -267,16 +269,16 @@ const indicators = module.exports = {
 		WEMA: { name: 'WEMA' },
 		RSI: { name: 'RSI' },
 		MACD: { name: 'MACD',
-			transform: result => result.map(k => [k.MACD, k.signal, k.histogram])
+			transform: result => result.map(k => [k?.MACD || 0, k?.signal, k?.histogram])
 		},
 		RSI: { name: 'RSI' },
 		BollingerBands: { 
 			name: 'BollingerBands',
-			transform: result => result.map(k => [k.middle, k.upper, k.lower, k.pb || 0])
+			transform: result => result.map(k => [k?.middle || 0, k?.upper, k?.lower, k?.pb || 0])
 		 },
 		ADX: { 
 			name: 'ADX', 
-			transform: result => result.map(k => [k.adx || 0, k.pdi || 0, k.mdi || 0])
+			transform: result => result.map(k => [k?.adx || 0, k?.pdi || 0, k?.mdi || 0])
 		},
 		ATR: { name: 'ATR' },
 		TrueRange: { name: 'TrueRange' },

@@ -8,18 +8,19 @@ module.exports = class Trade {
 	constructor(data, options) {
 		assert(() => options instanceof TradeOptions);
 		assert(() => data instanceof Data);
-		assert(() => data.isAttached);
 
 		this.options = options;
-		this.setTakeProfit(options.takeProfit);
-		this.setStopLoss(options.stopLoss);
 		this.openedAt = data;
 
 		this.startPrice = data.close * (1 + (options.spread * options.leverage));
 		this.low = this.startPrice;
 		this.high = this.startPrice;
-		this.update(data);
+		this.current = data;
+		this.currentPrice = data.close;
 
+		if (options.noFutureAwareness) {
+			return;
+		}
 		while(this.isOpen && this.current.next) {
 			this.update(this.current.next);
 		}
@@ -57,19 +58,19 @@ module.exports = class Trade {
 	}
 
 	get actualTakeProfit() {
-		return this.takeProfit / this.leverage;
+		return this.options.takeProfit / this.leverage;
 	}
 
 	get actualStopLoss() {
-		return this.stopLoss / this.leverage;
+		return this.options.stopLoss / this.leverage;
 	}
 
 	get stopLossPrice() {
-		return round(this.startPrice * (1 - this.actualStopLoss), 6);
+		return this.options.fixedStopLoss || round(this.startPrice * (1 - this.actualStopLoss), 6);
 	}
 
 	get takeProfitPrice() {
-		return round(this.startPrice * (1 + this.actualTakeProfit), 6);
+		return this.options.fixedTakeProfit || round(this.startPrice * (1 + this.actualTakeProfit), 6);
 	}
 
 	get maxDrawdown() {
@@ -78,19 +79,6 @@ module.exports = class Trade {
 
 	get maxDrawup() {
 		return round((this.high / this.startPrice - 1) * this.leverage, 6); 
-	}
-
-	setTakeProfit(takeProfit) {
-		ensure(takeProfit, Number);
-		assert(() => takeProfit > 0);
-		this.takeProfit = takeProfit;
-	}
-
-	setStopLoss(stopLoss) {
-		ensure(stopLoss, Number);
-		assert(() => stopLoss <= 1);
-		assert(() => stopLoss > 0);
-		this.stopLoss = stopLoss;
 	}
 
 	update(data) {
