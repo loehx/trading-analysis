@@ -69,11 +69,13 @@ module.exports = class DataSeries {
 	getResolution() {
 		const first = this.data[0];
 		const second = this.data[1];
+		const third = this.data[2];
 		if (!second) {
 			return '?';
 		}
 		const ms = second.timestamp - first.timestamp;
-		return util.humanizeDuration(ms);
+		const ms2 = third ? third?.timestamp - second.timestamp : Infinity;
+		return util.humanizeDuration(Math.min(ms, ms2));
 	}
 
 	addData(data) {

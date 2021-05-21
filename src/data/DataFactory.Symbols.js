@@ -1,3 +1,5 @@
+
+const { util } = require("../shared");
 const DataSeries = require("./DataSeries");
 
 const SYMBOLS = {
@@ -25,6 +27,9 @@ const SYMBOLS = {
 	AUDUSD_HOURLY: { name: 'AUDUSD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('AUD/USD', options) },
 	EURAUD_HOURLY: { name: 'EURAUD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('EUR/AUD', options) },
 
+	// FOREX HISTORICAL MINUTELY 
+
+	// FOREX HISTORICAL HOURLY
 	EURUSD_HOURLY_HISTORICAL: { name: 'EURUSD_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('EURUSD', options) },
 	EURCHF_HOURLY_HISTORICAL: { name: 'EURCHF_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('EURCHF', options) },
 	EURGBP_HOURLY_HISTORICAL: { name: 'EURGBP_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('EURGBP', options) },
@@ -92,5 +97,10 @@ const SYMBOLS = {
 	XAGUSD_HOURLY_HISTORICAL: { name: 'XAGUSD_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('XAGUSD', options) },
 	XAUGBP_HOURLY_HISTORICAL: { name: 'XAUGBP_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('XAUGBP', options) },
 }
+
+util.range(2000, 2020, 1).forEach(year => {
+	const name = 'EURUSD_MINUTELY_' + year;
+	SYMBOLS[name] = { name, getter: (factory, options) => factory._fetchForexData('EURUSD-1m_' + year, options) };
+});
 
 module.exports = SYMBOLS;

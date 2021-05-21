@@ -31,7 +31,7 @@ module.exports = class ScalpingStrategy {
 		const prev_ema100 = prev.calculate('EMA', 100);
 
 		const openTrades = trades.filter(t => t.isOpen);
-		if (data.close < ema100 && openTrades.length > 0) {
+		if (openTrades.length > 0 && data.close < ema50) {
 			openTrades.forEach(t => t.close());
 		}
 
@@ -63,7 +63,11 @@ module.exports = class ScalpingStrategy {
 
 		const ema25to50 = ema25 / ema50;
 		const ema50to100 = ema50 / ema100;
-		if (ema25to50 > 1.001 || ema50to100 > 1.001) {
+		if (ema25to50 < 1.0001 || ema50to100 < 1.0001) {
+			return false;
+		}
+
+		if (data.getPrev(10).filter(d => d.close < ema100).length > 0) {
 			return false;
 		}
 
@@ -76,13 +80,14 @@ module.exports = class ScalpingStrategy {
 		const { leverage, tpFactor, stopLoss } = this.config;
 
 
-		const slFactor = (1 - (stopLoss / 20));
+		const slFactor = (1 - (stopLoss / leverage));
 		const sl = data.open * slFactor;
 		return buy({
 			...TradeOptions.ETORO_FOREX,
 			leverage,
 			fixedStopLoss: sl,
-			fixedTakeProfit: data.close + ((data.close - sl) * tpFactor),
+			//fixedTakeProfit: data.close * (2 - slFactor),
+			fixedTakeProfit: data.close + ((data.close - ema50) * tpFactor),
 		});
 	}
 
