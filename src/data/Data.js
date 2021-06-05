@@ -59,6 +59,11 @@ module.exports = class Data {
 		return this.dataSeries.get(this.index + 1) || null;
 	}
 
+	jump(n) {
+		this._requireAttachment();
+		return this.dataSeries.get(this.index + n);
+	}
+
 	getPrev(n, includeSelf = false, padding = false) {
 		//return this._getCached(`p${n}${includeSelf}${padding}`, () => {
 			this._requireAttachment();
@@ -97,6 +102,11 @@ module.exports = class Data {
 		const values = this.dataSeries.calculate(name, period);
 		//console.log(name, period, values[this.index]);
 		return values[this.index];
+	}
+
+	getProfitability(period) {
+		const values = this.getNext(period);
+		return util.avgBy(values, d => d.close > this.close ? 1 : 0);
 	}
 
 	getCandlePattern() {

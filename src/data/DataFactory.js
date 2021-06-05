@@ -17,7 +17,6 @@ module.exports = class DataFactory {
 	}
 
 	get twelveData() {
-
 		return this._twelveData || (this._twelveData = new TwelveData(config['twelveData.apiKey'], this.log));
 	}
 
@@ -30,13 +29,18 @@ module.exports = class DataFactory {
 		assert(() => symbol.getter);
 		this.log.startTimer('.getDataSeries(' + symbol.name + ', ' + JSON.stringify(options) +')')
 		let data = await symbol.getter(this, options);
+
 		if (options) {
-			if (options.limit && data && data.length > options.limit) {
-				data = data.slice(data.length - options.limit);
+			if (options.from && data) {
+				const from = moment(options.from);
+				data = data.filter(d => moment(d.timestamp) >= from);
 			}
 			if (options.to && data) {
 				const to = moment(options.to);
 				data = data.filter(d => moment(d.timestamp) < to);
+			}
+			if (options.limit && data && data.length > options.limit) {
+				data = data.slice(data.length - options.limit);
 			}
 		}
 		const dataSeries = DataSeries.fromRawData(data);
@@ -64,6 +68,14 @@ module.exports = class DataFactory {
 		})
 	}
 
+	async _fetchTwelveDataMinutely(symbol, options) {
+		return await this._fetchTwelveData({
+			...options,
+			symbol,
+			interval: '1min'
+		})
+	}
+
 	async _fetchTwelveData(options) {
 		ensure(options, Object);
 		//this.log.write(`fetch data from TwelveData: ${options.symbol} ${options.interval} ...`, options);
@@ -85,6 +97,7 @@ module.exports = class DataFactory {
 	}
 
 	_fetchForexData(pair, options) {
+
 		const data = require('../../assets/data/' + pair + '.json');
 		const datasets = data.map(Data.fromTinyObject);
 		for (let i = 1; i < datasets.length; i++) {
@@ -102,6 +115,7 @@ module.exports = class DataFactory {
 				datasets[i] = null;
 			}	
 		}
+
 		return datasets.filter(k => k);
 	}
 

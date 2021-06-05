@@ -66,11 +66,11 @@ module.exports = class Trade {
 	}
 
 	get stopLossPrice() {
-		return this.options.fixedStopLoss || round(this.startPrice * (1 - this.actualStopLoss), 6);
+		return this.options.fixedStopLoss ?? round(this.startPrice * (1 - this.actualStopLoss), 6);
 	}
 
 	get takeProfitPrice() {
-		return this.options.fixedTakeProfit || round(this.startPrice * (1 + this.actualTakeProfit), 6);
+		return this.options.fixedTakeProfit ?? round(this.startPrice * (1 + this.actualTakeProfit), 6);
 	}
 
 	get maxDrawdown() {

@@ -94,7 +94,7 @@ module.exports = class TradeOptions {
 
 	static ETORO_FOREX = {
 		nightlyCost: 0.000051,
-		spread: 0.00008, // TODO: PRÜFEN
+		spread: 0.00005, // TODO: PRÜFEN
 		stopLoss: 0.5,
 		takeProfit: 0.5,
 	}

@@ -24,6 +24,7 @@ const SYMBOLS = {
 
 	// FOREX
 	EURUSD_HOURLY: { name: 'EURUSD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('EUR/USD', options) },
+	EURUSD_MINUTELY: { name: 'EURUSD_MINUTELY', getter: async (factory, options) => await factory._fetchTwelveDataMinutely('EUR/USD', options) },
 	AUDUSD_HOURLY: { name: 'AUDUSD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('AUD/USD', options) },
 	EURAUD_HOURLY: { name: 'EURAUD_HOURLY', getter: async (factory, options) => await factory._fetchTwelveDataHourly('EUR/AUD', options) },
 
@@ -96,6 +97,8 @@ const SYMBOLS = {
 	USDSGD_HOURLY_HISTORICAL: { name: 'USDSGD_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('USDSGD', options) },
 	XAGUSD_HOURLY_HISTORICAL: { name: 'XAGUSD_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('XAGUSD', options) },
 	XAUGBP_HOURLY_HISTORICAL: { name: 'XAUGBP_HOURLY_HISTORICAL', getter: (factory, options) => factory._fetchForexData('XAUGBP', options) },
+
+	EURUSD_MINUTELY_20XX: {}, // For auto completion
 }
 
 util.range(2000, 2020, 1).forEach(year => {

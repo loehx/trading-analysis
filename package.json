@@ -8,6 +8,9 @@
     "test": "jest --verbose",
     "clear": "node ./services/clearCache.js",
     "alex": "node ./test/trading/trader/Alex.manual.js --max-old-space-size=4096",
+    "johannis": "node ./test/trading/trader/Johannis.manual.js --max-old-space-size=4096",
+    "strategy": "node ./src/strategies/Runner.js --max-old-space-size=4096",
+    "analysis": "node ./src/analysis/Runner.js --max-old-space-size=4096",
     "indicators": "node ./test/shared/indicators.manual.js"
   },
   "repository": {

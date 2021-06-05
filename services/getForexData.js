@@ -15,71 +15,71 @@ const TARGET_DIRECTORY = '../assets/data';
 
 const PAIRS = [
 	'EURUSD',
-	'EURCHF',
-	'EURGBP',
-	'EURJPY',
-	'EURAUD',
-	'USDCAD',
-	'USDCHF',
-	'USDJPY',
-	'USDMXN',
-	'GBPCHF',
-	'GBPJPY',
-	'GBPUSD',
-	'AUDJPY',
-	'AUDUSD',
-	'CHFJPY',
-	'NZDJPY',
-	'NZDUSD',
-	'XAUUSD',
-	'EURCAD',
-	'AUDCAD',
-	'CADJPY',
-	'EURNZD',
-	'GRXEUR',
-	'NZDCAD',
-	'SGDJPY',
-	'USDHKD',
-	'USDNOK',
-	'USDTRY',
-	'XAUAUD',
-	'AUDCHF',
-	'AUXAUD',
-	'EURHUF',
-	'EURPLN',
-	'FRXEUR',
-	'HKXHKD',
-	'NZDCHF',
-	'SPXUSD',
-	'USDHUF',
-	'USDPLN',
-	'USDZAR',
-	'XAUCHF',
-	'ZARJPY',
-	'BCOUSD',
-	'ETXEUR',
-	'EURCZK',
-	'EURSEK',
-	'GBPAUD',
-	'GBPNZD',
-	'JPXJPY',
-	'UDXUSD',
-	'USDCZK',
-	'USDSEK',
-	'WTIUSD',
-	'XAUEUR',
-	'AUDNZD',
-	'CADCHF',
-	'EURDKK',
-	'EURNOK',
-	'EURTRY',
-	'GBPCAD',
-	'NSXUSD',
-	'UKXGBP',
-	'USDDKK',
-	'USDSGD',
-	'XAGUSD',
-	'XAUGBP'
+	// 'EURCHF',
+	// 'EURGBP',
+	// 'EURJPY',
+	// 'EURAUD',
+	// 'USDCAD',
+	// 'USDCHF',
+	// 'USDJPY',
+	// 'USDMXN',
+	// 'GBPCHF',
+	// 'GBPJPY',
+	// 'GBPUSD',
+	// 'AUDJPY',
+	// 'AUDUSD',
+	// 'CHFJPY',
+	// 'NZDJPY',
+	// 'NZDUSD',
+	// 'XAUUSD',
+	// 'EURCAD',
+	// 'AUDCAD',
+	// 'CADJPY',
+	// 'EURNZD',
+	// 'GRXEUR',
+	// 'NZDCAD',
+	// 'SGDJPY',
+	// 'USDHKD',
+	// 'USDNOK',
+	// 'USDTRY',
+	// 'XAUAUD',
+	// 'AUDCHF',
+	// 'AUXAUD',
+	// 'EURHUF',
+	// 'EURPLN',
+	// 'FRXEUR',
+	// 'HKXHKD',
+	// 'NZDCHF',
+	// 'SPXUSD',
+	// 'USDHUF',
+	// 'USDPLN',
+	// 'USDZAR',
+	// 'XAUCHF',
+	// 'ZARJPY',
+	// 'BCOUSD',
+	// 'ETXEUR',
+	// 'EURCZK',
+	// 'EURSEK',
+	// 'GBPAUD',
+	// 'GBPNZD',
+	// 'JPXJPY',
+	// 'UDXUSD',
+	// 'USDCZK',
+	// 'USDSEK',
+	// 'WTIUSD',
+	// 'XAUEUR',
+	// 'AUDNZD',
+	// 'CADCHF',
+	// 'EURDKK',
+	// 'EURNOK',
+	// 'EURTRY',
+	// 'GBPCAD',
+	// 'NSXUSD',
+	// 'UKXGBP',
+	// 'USDDKK',
+	// 'USDSGD',
+	// 'XAGUSD',
+	// 'XAUGBP'
 ];
 
 (async () => {
@@ -94,11 +94,10 @@ const PAIRS = [
 			const zipFiles = glob.sync(searchpath);
 			log.write(`found ${zipFiles.length} zip files`);
 
-			const map = {};
-
 			log.startTimer(`start converting data...`)
 			let counter = 0;
 			for (const zipFile of zipFiles) {
+				const map = {};
 				const zip = new AdmZip(zipFile);
 				const entries = zip.getEntries();
 				const CSVs = entries.filter(e => e.entryName.substr(-4) === '.csv');
@@ -120,7 +119,7 @@ const PAIRS = [
 					close = parseFloat(close);
 					high = parseFloat(high);
 					low = parseFloat(low);
-					const mom = moment(datetime, 'YYYYMMDD hhnnss').startOf('hour');
+					const mom = moment(datetime, 'YYYYMMDD hhmmss').startOf('minute');
 					const key = mom.format();
 
 					const hour = map[key];
@@ -139,19 +138,20 @@ const PAIRS = [
 						hour.close = close;
 					}
 				}
-				log.writeProgress(++counter, zipFiles.length, 1000, CSV.entryName);
+				log.writeProgress(++counter, zipFiles.length);
+
+				const values = Object.values(map);
+				values.slice(0, 1).forEach(console.log);
+				values.sort((a,b) => a.timestamp - b.timestamp);
+	
+				const list = values.map(v => new Data(v).toTinyObject());
+				const outContent = JSON.stringify(list);
+				const targetFilePath = path.join(__dirname, TARGET_DIRECTORY, pair + '-1m_' + moment(values[0].timestamp).get('year') + '.json');
+				fs.writeFileSync(targetFilePath, outContent);
 			}
 
-			const values = Object.values(map);
-			values.slice(0, 1).forEach(console.log);
-			values.sort((a,b) => a.timestamp - b.timestamp);
 
-			const list = values.map(v => new Data(v).toTinyObject());
-			const outContent = JSON.stringify(list);
-			const targetFilePath = path.join(__dirname, TARGET_DIRECTORY, pair + '.json');
-			fs.writeFileSync(targetFilePath, outContent);
-
-			log.stopTimer('done');
+			log.stopTimer('done extracting ' + values.length + ' data points.');
 		}
 	}
 	catch(e) {

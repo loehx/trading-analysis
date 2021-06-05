@@ -32,13 +32,13 @@ module.exports = class Alex extends Trader {
 			hiddenLayers: [
 				//{ dropout: .1 },
 				//{ units: 160, activation: 'leakyrelu' },
-				{ dropout: .6 },
+				{ dropout: .2 },
 				{ units: 80, activation: 'leakyrelu' },
-				{ dropout: .6 },
+				{ dropout: .2 },
 				{ units: 64, activation: 'leakyrelu' },
-				{ dropout: .6 },
+				{ dropout: .1 },
 				{ units: 36, activation: 'leakyrelu' },
-				{ dropout: .4 },
+				{ dropout: .1 },
 				{ units: 16, activation: 'leakyrelu' },
 				//{ dropout: .1 },
 				//{ units: 20, activation: 'leakyrelu' },
@@ -68,7 +68,7 @@ module.exports = class Alex extends Trader {
 			await this.trainOn({
 				symbols: [ 
 					Symbols.EURUSD_HOURLY_HISTORICAL, 
-					Symbols.EURCAD_HOURLY_HISTORICAL,
+					//Symbols.EURCAD_HOURLY_HISTORICAL,
 				],
 				//limit: 10000,
 			});	
@@ -81,17 +81,12 @@ module.exports = class Alex extends Trader {
 
 			await this.evaluate({
 				symbol: Symbols.EURUSD_HOURLY,
-				limit: 800,
+				limit: 1500,
 			})
 
 			await this.evaluate({
 				symbol: Symbols.AUDUSD_HOURLY,
-				limit: 800,
-			})
-
-			await this.evaluate({
-				symbol: Symbols.CHINAA50_HOURLY,
-				limit: 800,
+				limit: 1500,
 			})
 		}
 	}
@@ -116,13 +111,22 @@ module.exports = class Alex extends Trader {
 		this.log.write(`${symbol.name} => ${predictions[0][predictions[0].length - 1]}`)
 
 		plot2d(
-			predictions.map((arr, i) => ({ 
+			...predictions.map((arr, i) => ({ 
 				x: validation.series.map(k => k.index + ' ' + moment(k.timestamp).format('DD.MM.YYYY HH:mm')),
-				Close: scaleMinMax(validation.series.closes),
+				[symbol.name]: validation.series.toArray(),
 				'Probability (AI)': arr,
 				// 'Probability (AI) (SMA-3)': indicators.getSMAs(3, arr),
 				'Actual': validation.data.map(k => k.y[i]),
 				'Min. Probability': () => minProbability,
+				scaleMinMax: [symbol.name],
+				title: `${symbol.name}: ${titles[i]} (accuracy: ${util.round(accuracy, 2)} | indicators: ${JSON.stringify(indicatorTypes)})`
+			})),
+			...predictions.map((arr, i) => ({ 
+				x: validation.series.map(k => k.index + ' ' + moment(k.timestamp).format('DD.MM.YYYY HH:mm')),
+				[symbol.name]: validation.series.toArray(),
+				'Probability (AI)': arr,
+				'Min. Probability': () => minProbability,
+				scaleMinMax: [symbol.name],
 				title: `${symbol.name}: ${titles[i]} (accuracy: ${util.round(accuracy, 2)} | indicators: ${JSON.stringify(indicatorTypes)})`
 			}))
 		)
@@ -273,11 +277,11 @@ module.exports = class Alex extends Trader {
 			// closedAboveBefore: () => series.map(data => closedAboveBefore(data, period)),
 			// closedBelowBefore: () => series.map(data => closedBelowBefore(data, period)),
 			
-			//RSI: () =>series.calculate('RSI', period),
+			RSI: () =>series.calculate('RSI', period),
 			//StochasticRSI: () =>series.calculate('StochasticRSI', period).map(k => k[0] || 0),
-			//ADX0: () =>series.calculate('ADX', period).map(k => k[0] || 0),
-			//MACD: () =>series.calculate('MACD', period).map(k => k[0] || 0),
-			AwesomeOscillator: () =>series.calculate('AwesomeOscillator', period).map(k => k),
+			ADX0: () =>series.calculate('ADX', period).map(k => k[0] || 0),
+			MACD: () =>series.calculate('MACD', period).map(k => k[0] || 0),
+			//AwesomeOscillator: () =>series.calculate('AwesomeOscillator', period).map(k => k),
 		};
 
 
@@ -306,13 +310,17 @@ module.exports = class Alex extends Trader {
 		const { reduceSpikesFactor } = this.config;
 		const cols = Object.values(r);
 		const result = [];
+
 		cols.map(col => {
-			col = reduceSpikes(col, reduceSpikesFactor);
-			col = scaleByMean(col, 500);
+			// col = reduceSpikes(col, reduceSpikesFactor);
+			// col = scaleByMean(col, 500);
 			col = scaleMinMax(col);
+
 			// result.push(col);
-			result.push(col.map(v => v >= 0.5 ? (v-0.5)*2 : 0));
-			result.push(col.map(v => v < 0.5 ? 1-(v*2) : 0));
+			result.push(col.map(v => v >= 0.75 ? 1 : 0));
+			result.push(col.map(v => v >= 0.5 && v < 0.75 ? 1 : 0));
+			result.push(col.map(v => v >= 0.25 && v < 0.5 ? 1 : 0));
+			result.push(col.map(v => v < 0.25 ? 1 : 0));
 		});
 
 		// if (!this.__test){

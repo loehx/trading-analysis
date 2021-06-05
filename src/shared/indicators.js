@@ -216,6 +216,14 @@ const indicators = module.exports = {
 			symbol = indicators.Symbols[symbol];
 		}
 
+		if (symbol.func) {
+			const result = symbol.func(period, data);
+			if (data.close.length > result.length) {
+				result.unshift(...new Array(data.close.length - result.length).fill(result[0]));
+			}
+			return result;
+		}
+
 		const func = technicalindicators[symbol.name];
 		let result = null;
 
@@ -227,9 +235,9 @@ const indicators = module.exports = {
 				stochasticPeriod : period,
 				kPeriod : 3,
 				dPeriod : 3,
-				fastPeriod: Math.round(period / 4), // AwesomeOscillator, MACD
+				fastPeriod: Math.round(period / 2), // AwesomeOscillator, MACD
 				slowPeriod : period, // AwesomeOscillator, MACD
-				signalPeriod: period, // Stochastic, MACD
+				signalPeriod: Math.round(period / 2), // Stochastic, MACD
 				stdDev: .2, // BollingerBands
 				step: 0.02, // PSAR
 				max: 0.2, // PSAR
@@ -263,6 +271,23 @@ const indicators = module.exports = {
 	},
 
 	Symbols: {
+		MAX: { name: 'MAX', func: (period, { high }) => util.calculateMax(high, period) },
+		MIN: { name: 'MIN', func: (period, { low }) => util.calculateMin(low, period) },
+		PROFITABILITY: { name: 'PROFITABILITY', func: (period, { close }) => util.calculateProfitability(close, period) },
+
+		PROGRESS: { 
+			name: 'PROGRESS', 
+			func: (period, { close }) => {
+				const result = new Array(period).fill(0);
+				for (let i = period; i < close.length; i++) {
+					const current = close[i];
+					const past = close[i - period];
+					result.push(current - past);
+				}
+				return result;
+			},
+		},
+
 		SMA: { name: 'SMA' },
 		EMA: { name: 'EMA' },
 		WMA: { name: 'WMA' },

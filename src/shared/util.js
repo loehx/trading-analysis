@@ -54,7 +54,7 @@ const util = module.exports = {
         return result.slice(0, resultCount);
     },
 
-    scaleMinMax(arr) {
+    scaleMinMax(arr, minusOneToOne) {
         let min = Infinity;
         let max = -Infinity;
         const len = arr.length;
@@ -73,6 +73,16 @@ const util = module.exports = {
         }
         else if (max === 1 && min === 0) {
             return arr; // no need to rescale
+        }
+        
+        if (minusOneToOne && min < 0) {
+            const r1 = (max - min);
+            const ratio = Math.abs(max) / Math.abs(min);
+            const range = (max - min) / ratio;
+            const shift = Math.abs(ratio / max);
+            //console.log('minusOneToOne', {min, max, r1, ratio, shift, range})
+
+            return arr.map(a => util.round((a - min) / range - (shift), 6));
         }
         const range = max - min;
         return arr.map(a => util.round((a - min) / range, 6));
@@ -133,6 +143,111 @@ const util = module.exports = {
 
             avg = avg / counter;
             result.push(util.round(avg, 6));
+        }
+        return result;
+    },
+
+    calculateMax(arr, period) {
+        const result = new Array(arr.length);
+        result.length = 0;
+
+        period = Math.min(period, arr.length);
+
+        result.push(arr[0]);
+
+        for (let i = 1; i < arr.length; i++) {
+            let max = -Infinity;
+
+            const pStart = Math.max(i - period, 1);
+            const pEnd = i;
+
+            for (let p = pStart; p <= pEnd; p++) {
+                const v = arr[p];
+                if (v > max) {
+                    max = v;
+                }
+            }
+
+            result.push(util.round(max, 6));
+        }
+        return result;
+    },
+
+    calculateMin(arr, period) {
+        const result = new Array(arr.length);
+        result.length = 0;
+
+        period = Math.min(period, arr.length);
+
+        result.push(arr[0]);
+
+        for (let i = 1; i < arr.length; i++) {
+            let min = Infinity;
+
+            const pStart = Math.max(i - period, 1);
+            const pEnd = i;
+
+            for (let p = pStart; p <= pEnd; p++) {
+                const v = arr[p];
+                if (v < min) {
+                    min = v;
+                }
+            }
+
+            result.push(util.round(min, 6));
+        }
+        return result;
+    },
+
+    calculateProfitability(arr, period) {
+        const result = new Array(arr.length);
+        result.length = 0;
+
+        period = Math.min(period, arr.length);
+
+        for (let i = 0; i < arr.length; i++) {
+            let profitability = 0;
+            const current = arr[i];
+            const pStart = i;
+            const pEnd = Math.min(i + period, arr.length - 1);
+            const count = pEnd - pStart;
+
+            for (let p = pStart; p <= pEnd; p++) {
+                const v = arr[p];
+                if (v > current) {
+                    profitability += 1;
+                }
+            }
+
+            result.push(profitability === 0 ? profitability : util.round(profitability / count, 6));
+        }
+        return result;
+    },
+
+    scaleByMax(arr, period) {
+        const result = new Array(arr.length);
+        result.length = 0;
+
+        period = Math.min(period, arr.length);
+
+        result.push(arr[0]);
+
+        for (let i = 1; i < arr.length; i++) {
+            let max = 0;
+            let counter = 0;
+            let val = arr[i];
+
+            const pStart = Math.max(i - period, 1);
+            const pEnd = i;
+
+            for (let p = pStart; p <= pEnd; p++) {
+                const v = arr[p];
+                if (v > max) {
+                    max = v;
+                }
+            }
+
+            result.push(util.round(max - val, 6));
         }
         return result;
     },
@@ -342,6 +457,20 @@ const util = module.exports = {
         return result;
     },
 
+    crossJoinArray(arr, func) {
+        const result = [];
+        func = func || ((a,b) => [a,b]);
+        for (let a = 0; a < arr.length; a++) {
+            for (let b = 0; b < arr.length; b++) {
+                if (a === b) {
+                    continue;
+                }
+                result.push(func(arr[a], arr[b]));
+            }
+        }
+        return result;
+    },
+
     humanizeDuration(from, to) {
         const ms = (to ?? (from * 2)) - from;
         if (!isFinite(ms)) {
@@ -375,6 +504,19 @@ const util = module.exports = {
 
     flatten(...args) {
         return _.flatten(...args);
+    },
+
+    toShortString(obj) {
+        return Object.keys(obj).map(key => key + ':' + JSON.stringify(obj[key])).join(' ');
+    },
+
+    newArray(size, fill) {
+        const arr = new Array(size);
+        arr.length = 0;
+        if (typeof fill !== 'undefined') {
+            arr.fill(fill);
+        }
+        return arr;
     },
 
     getExamples(arr, n) {

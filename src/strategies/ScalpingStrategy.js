@@ -16,7 +16,7 @@ module.exports = class ScalpingStrategy {
 		};
 	}
 
-	tick({ series, data, buy, log, trades }) {
+	tick({ series, data, buy, log, trades, draw }) {
 		const prev = data.prev;
 		const { maxOpenTrades } = this.config;
 		if (!prev) {
@@ -30,7 +30,15 @@ module.exports = class ScalpingStrategy {
 		const prev_ema50 = prev.calculate('EMA', 50);
 		const prev_ema100 = prev.calculate('EMA', 100);
 
+		draw('ema25', ema25);
+		draw('ema50', ema50);
+		draw('ema100', ema100);
+
 		const openTrades = trades.filter(t => t.isOpen);
+		openTrades.forEach((t) => {
+			draw('SL-'+t.openedAt.toString(), t.stopLossPrice);
+			draw('TP-'+t.openedAt.toString(), t.takeProfitPrice);
+		})
 		if (openTrades.length > 0 && data.close < ema50) {
 			openTrades.forEach(t => t.close());
 		}
@@ -71,7 +79,7 @@ module.exports = class ScalpingStrategy {
 			return false;
 		}
 
-		if (data.open < ema50) {
+		if (data.open < ema50 || data.close < ema50) {
 			return false;
 		}
 
@@ -81,13 +89,14 @@ module.exports = class ScalpingStrategy {
 
 
 		const slFactor = (1 - (stopLoss / leverage));
-		const sl = data.open * slFactor;
+		const fixedStopLoss = Math.max(ema50, data.open * slFactor);
+		const fixedTakeProfit = data.close + ((data.close - fixedStopLoss) * tpFactor);
+		// draw('fixedTakeProfit', fixedTakeProfit);
 		return buy({
 			...TradeOptions.ETORO_FOREX,
 			leverage,
-			fixedStopLoss: sl,
-			//fixedTakeProfit: data.close * (2 - slFactor),
-			fixedTakeProfit: data.close + ((data.close - ema50) * tpFactor),
+			fixedStopLoss,
+			fixedTakeProfit,
 		});
 	}
 

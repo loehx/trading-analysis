@@ -1,3 +1,4 @@
+const { option } = require('commander');
 const { plot, Plot, stack } = require('nodeplotlib');
 const { scaleMinMax } = require('./util');
 const util = require('./util');
@@ -23,8 +24,9 @@ const plotting = module.exports = {
 		}
 		args.forEach(options => {
 			// type: line, bar, scatter, scatter3d
-			const keys = Object.keys(options).filter(k => k !== 'x');
+			const keys = Object.keys(options).filter(k => k !== 'x' && k !== 'scaleMinMax');
 			const labels = options.labels && (Array.isArray(options.labels) ? options.labels : options.x.map(options.labels));
+			const shouldScaleMinMax = Array.isArray(options.scaleMinMax) ? ((key) => options.scaleMinMax.indexOf(key) !== -1) : () => !!options.scaleMinMax;
 
 			stack(
 				keys.map(k => {
@@ -40,7 +42,9 @@ const plotting = module.exports = {
 					const count = Math.min(y.length, options.max || Infinity);
 					let x = options.x || util.range(1, count);
 	
+					
 					if (y.length > options.max) {
+						x = x.slice(y.length - options.max);
 						y = y.slice(y.length - options.max);
 					}
 
@@ -51,7 +55,7 @@ const plotting = module.exports = {
 							...y.map(a => a.low),
 							...y.map(a => a.high),
 						]
-						if (options.scaleMinMax) {
+						if (shouldScaleMinMax(k)) {
 							values = scaleMinMax(values);
 						}
 						return {
@@ -69,8 +73,8 @@ const plotting = module.exports = {
 					}
 	
 	
-					if (options.scaleMinMax) {
-						y = util.scaleMinMax(y, true);
+					if (shouldScaleMinMax(k)) {
+						y = util.scaleMinMax(y);
 					}
 	
 					return {
